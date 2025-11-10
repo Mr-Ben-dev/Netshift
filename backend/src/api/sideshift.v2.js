@@ -240,15 +240,27 @@ export async function createFixedShift({
     ...(externalId ? { externalId } : {})
   };
   
-  const res = await retry(() =>
-    limiterShifts.schedule(() => 
-      http.post('/shifts/fixed', body, { 
-        headers: headers(userIp, true) 
-      })
-    )
-  );
-  
-  return res.data;
+  try {
+    console.log('[SideShift] Creating fixed shift:', { quoteId, settleAddress, affiliateId: CONFIG.sideshift.affiliateId });
+    const res = await retry(() =>
+      limiterShifts.schedule(() => 
+        http.post('/shifts/fixed', body, { 
+          headers: headers(userIp, true) 
+        })
+      )
+    );
+    console.log('[SideShift] Shift created successfully:', res.data.id);
+    return res.data;
+  } catch (error) {
+    console.error('[SideShift] createFixedShift FAILED:', {
+      quoteId,
+      settleAddress,
+      status: error?.response?.status,
+      errorData: error?.response?.data,
+      message: error.message
+    });
+    throw error;
+  }
 }
 
 /**
