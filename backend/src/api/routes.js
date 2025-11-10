@@ -588,18 +588,13 @@ router.post('/settlements/:id/execute', async (req, res) => {
           depositAmount: String(item.payAmount)
         });
 
-        // Create a safe externalId with only alphanumeric chars and hyphens
-        // Format: netshift-settlementId-timestamp-randomSuffix
-        const randomSuffix = Math.random().toString(36).substring(2, 8);
-        const externalId = `netshift-${s.settlementId}-${Date.now()}-${randomSuffix}`;
-        
+        // Don't send externalId - it's optional and SideShift validation is unclear
         const shift = await createFixedShift({
           userIp,
           quoteId: quote.id,
           settleAddress,
           settleMemo: settleMemo || undefined,
-          refundAddress: item.refundAddress || undefined,
-          externalId
+          refundAddress: item.refundAddress || undefined
         });
 
         orders.push({
