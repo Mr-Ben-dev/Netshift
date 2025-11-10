@@ -517,6 +517,19 @@ router.post('/settlements/:id/execute', async (req, res) => {
         const settleAddress = item.receiveAddress;
         const settleMemo = item.receiveMemo || '';
         
+        // Check if address exists
+        if (!settleAddress) {
+          console.error(`[Execute] Missing receiveAddress for ${item.recipient}`);
+          console.error(`[Execute] Item data:`, JSON.stringify(item, null, 2));
+          orders.push({
+            recipient: item.recipient,
+            status: 'failed',
+            error: `Missing receive address for ${item.recipient}`,
+            failureReason: 'No receive address provided'
+          });
+          continue;
+        }
+        
         const addressValidation = validateSettleDetails(
           item.receiveToken,
           item.receiveChain,
