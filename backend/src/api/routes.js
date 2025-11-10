@@ -17,14 +17,14 @@ import { recommendDepositToken } from '../netting/optimizer.js';
 import { validateSettleDetails } from '../utils/addressValidation.js';
 import { extractUserIp, settlementCreateSchema } from '../utils/validation.js';
 import {
-  cancelOrder,
-  checkPermissions,
-  createFixedShift,
-  getCoins,
-  getPairs,
-  getShiftStatus,
-  requestFixedQuote,
-  validatePair
+    cancelOrder,
+    checkPermissions,
+    createFixedShift,
+    getCoins,
+    getPairs,
+    getShiftStatus,
+    requestFixedQuote,
+    validatePair
 } from './sideshift.v2.js';
 
 const router = Router();
@@ -621,13 +621,40 @@ router.post('/settlements/:id/execute', async (req, res) => {
       }
     }
 
+    // Filter out failed orders (they don't have required fields for MongoDB)
+    const successfulOrders = orders.filter(o => o.orderId && o.status !== 'failed');
+    const failedOrders = orders.filter(o => o.status === 'failed');
+
+    // Log failed orders for debugging
+    if (failedOrders.length > 0) {
+      console.error('[Execute] Failed orders:', failedOrders.map(o => ({
+        recipient: o.recipient,
+        error: o.error
+      })));
+    }
+
+    // If ALL orders failed, return error
+    if (successfulOrders.length === 0) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'All orders failed to create',
+        failures: failedOrders
+      });
+    }
+
     const updated = await updateSettlement(s.settlementId, {
       status: 'executing',
-      sideshiftOrders: orders,
+      sideshiftOrders: successfulOrders, // Only save successful orders
       depositInstructions: undefined // not a single address anymore
     });
 
-    res.json({ success: true, data: { orders: updated.sideshiftOrders } });
+    res.json({ 
+      success: true, 
+      data: { 
+        orders: updated.sideshiftOrders,
+        failures: failedOrders.length > 0 ? failedOrders : undefined
+      } 
+    });
   } catch (e) {
     const s = e?.response?.status || 500;
     res.status(s).json({ success: false, error: e?.response?.data?.message || e.message });
