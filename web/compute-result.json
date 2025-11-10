@@ -1,0 +1,1 @@
+{"success":true,"data":{"savings":{"paymentReduction":100,"estimatedFees":0,"timeSaved":"330"},"originalCount":2,"optimizedCount":0,"netPayments":[],"smart":{"token":"usdc","chain":"base","estSavingUSD":12,"reason":"Lower network fees on Base compared to Ethereum mainnet"},"priceTimestamp":"2025-11-09T22:10:38.567Z"}}

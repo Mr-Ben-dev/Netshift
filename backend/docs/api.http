@@ -1,0 +1,107 @@
+###
+### NetShift API Manual Testing
+### Use with VS Code REST Client extension
+###
+
+@baseUrl = http://localhost:5000
+@userIp = 1.2.3.4
+
+###
+### Health Check
+###
+GET {{baseUrl}}/health
+
+###
+### Get All Available Coins (200+ assets)
+###
+GET {{baseUrl}}/api/coins
+
+###
+### Check Permissions (use your real IP)
+###
+GET {{baseUrl}}/api/permissions
+x-user-ip: {{userIp}}
+
+###
+### Validate a Specific Pair
+###
+GET {{baseUrl}}/api/pairs/validate?depositCoin=usdc&depositNetwork=base&settleCoin=usdc&settleNetwork=ethereum&amount=100
+
+###
+### Get Bulk Pairs Info
+###
+GET {{baseUrl}}/api/pairs?pairs=usdc-base/usdc-ethereum,eth-ethereum/btc-bitcoin
+
+###
+### Create Settlement
+###
+POST {{baseUrl}}/api/settlements/create
+content-type: application/json
+
+{
+  "obligations": [
+    {"from": "DAO", "to": "DevA", "amount": 200, "token": "usdc", "chain": "base"},
+    {"from": "DAO", "to": "DevB", "amount": 100, "token": "usdc", "chain": "base"},
+    {"from": "DevA", "to": "DevB", "amount": 50, "token": "usdc", "chain": "base"}
+  ],
+  "recipientPreferences": [
+    {
+      "party": "DevA",
+      "receiveToken": "usdc",
+      "receiveChain": "base",
+      "receiveAddress": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    {
+      "party": "DevB",
+      "receiveToken": "usdc",
+      "receiveChain": "base",
+      "receiveAddress": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    }
+  ]
+}
+
+###
+### Get Settlement by ID (replace with actual ID from create response)
+###
+@settlementId = st_abc123def456
+
+GET {{baseUrl}}/api/settlements/{{settlementId}}
+
+###
+### Compute Netting
+###
+POST {{baseUrl}}/api/settlements/{{settlementId}}/compute
+
+###
+### Execute Settlement (requires 200 from /permissions)
+### WARNING: This creates real SideShift orders!
+###
+POST {{baseUrl}}/api/settlements/{{settlementId}}/execute
+x-user-ip: {{userIp}}
+
+###
+### Get Settlement Status (polls all orders)
+###
+GET {{baseUrl}}/api/settlements/{{settlementId}}/status
+
+###
+### Get Proof/Receipt
+###
+GET {{baseUrl}}/api/proof/{{settlementId}}
+
+###
+### Export Settlement (JSON)
+###
+GET {{baseUrl}}/api/settlements/{{settlementId}}/export?format=json
+
+###
+### Export Settlement (CSV)
+###
+GET {{baseUrl}}/api/settlements/{{settlementId}}/export?format=csv
+
+###
+### Cancel a Shift (replace with real shift ID)
+###
+@shiftId = abc123def456
+
+POST {{baseUrl}}/api/shifts/{{shiftId}}/cancel

@@ -1,0 +1,44 @@
+{
+  "name": "netshift-backend",
+  "version": "0.3.0",
+  "type": "module",
+  "main": "src/server.v2.js",
+  "scripts": {
+    "dev": "nodemon src/server.v2.js",
+    "start": "node src/server.v2.js",
+    "test": "jest --runInBand",
+    "seed": "node scripts/seed.js",
+    "dev-test": "node scripts/dev-test.js",
+    "dev-smoke": "node scripts/real-smoke.js"
+  },
+  "dependencies": {
+    "@solana/web3.js": "^1.98.4",
+    "axios": "^1.6.7",
+    "bottleneck": "^2.19.5",
+    "bs58": "^6.0.0",
+    "cors": "^2.8.5",
+    "csv-parse": "^5.5.6",
+    "dotenv": "^16.4.5",
+    "ethers": "^6.15.0",
+    "express": "^4.19.2",
+    "express-rate-limit": "^8.2.1",
+    "helmet": "^7.1.0",
+    "joi": "^17.11.0",
+    "lru-cache": "^11.2.2",
+    "mongoose": "^8.3.1",
+    "morgan": "^1.10.0",
+    "node-fetch": "^3.3.2",
+    "qrcode": "^1.5.3",
+    "ripple-address-codec": "^5.0.0",
+    "stellar-sdk": "^13.3.0",
+    "winston": "^3.12.0"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "nodemon": "^3.0.3",
+    "supertest": "^6.3.4"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

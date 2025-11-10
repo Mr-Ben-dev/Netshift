@@ -1,0 +1,4 @@
+from,to,amount,token,chain
+Alice,Bob,100,USDC,base
+Bob,Charlie,100,USDC,base
+Charlie,Alice,100,USDC,base

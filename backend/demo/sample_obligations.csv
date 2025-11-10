@@ -1,0 +1,18 @@
+from,to,amount,token,chain,reference
+DAO,Alice,500,usdc,base,Contributor payout Q4
+DAO,Bob,1,eth,ethereum,Development work November
+DAO,Charlie,750,usdc,polygon,Design services
+DAO,Diana,10,sol,solana,Marketing campaign
+Alice,Charlie,0.01,btc,bitcoin,Loan repayment
+Alice,Bob,300,usdc,base,Shared office expense
+Bob,Charlie,0.5,eth,ethereum,Smart contract audit
+Charlie,Alice,200,usdc,polygon,Refund for materials
+Diana,Eve,5,sol,solana,Referral bonus
+Eve,Frank,400,usdc,base,Equipment purchase
+Frank,Diana,0.005,btc,bitcoin,Consulting fee
+Grace,DAO,100,usdc,arbitrum,DAO contribution
+Bob,Grace,250,usdc,base,Legal services
+Charlie,Diana,200,usdc,polygon,Content creation
+Eve,Alice,150,usdc,base,Split dinner bill
+Frank,Bob,0.2,eth,ethereum,Gas fee reimbursement
+Diana,Grace,3,sol,solana,Community support tip

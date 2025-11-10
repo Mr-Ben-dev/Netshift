@@ -1,0 +1,3 @@
+from,to,amount,token,chain
+Client1,Vendor1,150,XRP,xrpl
+Client2,Vendor1,75,XRP,xrpl

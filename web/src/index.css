@@ -1,0 +1,239 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    /* NetShift Dark-First Design System */
+    
+    /* Backgrounds - Deep Space Navy */
+    --background: 222 47% 5%; /* #0a0e1a */
+    --background-secondary: 222 42% 9%; /* #0f172a */
+    --background-tertiary: 217 33% 14%; /* #1e293b */
+    --foreground: 210 40% 98%; /* #f8fafc */
+    
+    /* Card Surfaces */
+    --card: 222 42% 9%; /* #0f172a */
+    --card-foreground: 210 40% 98%;
+    
+    /* Glass Effect */
+    --glass-bg: 0 0% 100% / 0.05;
+    --glass-border: 0 0% 100% / 0.1;
+    
+    /* Popover */
+    --popover: 222 42% 9%;
+    --popover-foreground: 210 40% 98%;
+    
+    /* Primary - Blue Gradient */
+    --primary: 217 91% 60%; /* #3b82f6 */
+    --primary-dark: 221 83% 46%; /* #1e40af */
+    --primary-foreground: 210 40% 98%;
+    
+    /* Secondary - Cyan Gradient */
+    --secondary: 189 94% 43%; /* #06b6d4 */
+    --secondary-dark: 188 94% 38%; /* #0891b2 */
+    --secondary-foreground: 210 40% 98%;
+    
+    /* Success - Green */
+    --success: 158 64% 52%; /* #10b981 */
+    --success-dark: 160 84% 39%; /* #059669 */
+    
+    /* Warning - Amber */
+    --warning: 38 92% 50%; /* #f59e0b */
+    --warning-dark: 32 95% 44%; /* #d97706 */
+    
+    /* Error - Red */
+    --destructive: 0 72% 51%; /* #ef4444 */
+    --destructive-dark: 0 74% 42%; /* #dc2626 */
+    --destructive-foreground: 210 40% 98%;
+    
+    /* Muted */
+    --muted: 217 33% 14%;
+    --muted-foreground: 215 16% 47%; /* #64748b */
+    
+    /* Accent */
+    --accent: 217 33% 14%;
+    --accent-foreground: 210 40% 98%;
+    
+    /* Interactive */
+    --link: 213 94% 68%; /* #60a5fa */
+    --link-hover: 217 91% 60%; /* #3b82f6 */
+    
+    /* Borders & Inputs */
+    --border: 217 33% 17%; /* rgba(255,255,255,0.1) */
+    --input: 217 33% 14%;
+    --ring: 217 91% 60%;
+    
+    /* Border Radius */
+    --radius: 0.5rem;
+    
+    /* Shadows */
+    --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.05);
+    --shadow-md: 0 4px 6px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 10px 15px rgb(0 0 0 / 0.15);
+    --shadow-xl: 0 20px 25px rgb(0 0 0 / 0.2);
+    --shadow-glow: 0 0 20px rgb(59 130 246 / 0.4);
+    
+    /* Animations */
+    --transition-fast: 150ms;
+    --transition-normal: 200ms;
+    --transition-slow: 300ms;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold;
+  }
+  
+  code, pre {
+    font-family: 'Fira Code', 'Courier New', monospace;
+  }
+}
+
+@layer utilities {
+  /* Gradient Text */
+  .gradient-text-primary {
+    @apply bg-gradient-to-r from-[#3b82f6] to-[#1e40af] bg-clip-text text-transparent;
+  }
+  
+  .gradient-text-secondary {
+    @apply bg-gradient-to-r from-[#06b6d4] to-[#0891b2] bg-clip-text text-transparent;
+  }
+  
+  .gradient-text-cyan-blue {
+    @apply bg-gradient-to-r from-[#06b6d4] to-[#3b82f6] bg-clip-text text-transparent;
+  }
+  
+  /* Gradient Backgrounds */
+  .gradient-bg-primary {
+    @apply bg-gradient-to-br from-[#3b82f6] to-[#1e40af];
+  }
+  
+  .gradient-bg-secondary {
+    @apply bg-gradient-to-br from-[#06b6d4] to-[#0891b2];
+  }
+  
+  .gradient-bg-success {
+    @apply bg-gradient-to-br from-[#10b981] to-[#059669];
+  }
+  
+  .gradient-bg-warning {
+    @apply bg-gradient-to-br from-[#f59e0b] to-[#d97706];
+  }
+  
+  .gradient-bg-error {
+    @apply bg-gradient-to-br from-[#ef4444] to-[#dc2626];
+  }
+  
+  /* Glass Card */
+  .glass-card {
+    @apply bg-white/5 backdrop-blur-lg border border-white/10 rounded-lg;
+  }
+  
+  .glass-card-hover {
+    @apply glass-card transition-all duration-200 hover:bg-white/[0.07] hover:-translate-y-1 hover:shadow-xl;
+  }
+  
+  /* Button Glow */
+  .btn-glow {
+    @apply shadow-[0_0_20px_rgba(59,130,246,0.4)] hover:shadow-[0_0_30px_rgba(59,130,246,0.6)] transition-shadow duration-200;
+  }
+  
+  /* Shimmer Animation for Skeletons */
+  .shimmer {
+    @apply animate-shimmer bg-gradient-to-r from-[#1e293b] via-[#334155] to-[#1e293b] bg-[length:200%_100%];
+  }
+  
+  /* Smooth Animations */
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-out;
+  }
+  
+  .animate-slide-up {
+    animation: slideUp 0.3s ease-out;
+  }
+  
+  .animate-scale-in {
+    animation: scaleIn 0.2s ease-out;
+  }
+  
+  /* Focus Visible */
+  .focus-visible-ring {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}
