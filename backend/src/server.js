@@ -34,6 +34,10 @@ try {
 
 console.log("🛣️  Setting up routes...");
 
+// Create rate limiter once at initialization
+const apiRateLimiter = createRateLimiter(300, 15 * 60 * 1000);
+console.log("  ✓ Rate limiter created");
+
 try {
   app.get("/health", (_, res) => res.json({
     success: true,
@@ -47,8 +51,8 @@ try {
     if (req.path.startsWith('/coins/icon/')) {
       return next();
     }
-    // Apply rate limiter with more generous limits
-    return createRateLimiter(300, 15 * 60 * 1000)(req, res, next);
+    // Apply pre-created rate limiter
+    return apiRateLimiter(req, res, next);
   }, apiRouter);
   console.log("✅ API routes added with conditional rate limiting");
 
