@@ -12,7 +12,11 @@ export function Navbar() {
     { name: "Dashboard", href: "/dashboard" },
     { name: "Analytics", href: "/analytics" },
     { name: "Import", href: "/import" },
-    { name: "Docs", href: "https://docs.netshift.app", external: true },
+    {
+      name: "Docs",
+      href: "https://github.com/Mr-Ben-dev/Netshift/blob/main/DOCUMENTATION.md",
+      external: true,
+    },
   ];
 
   return (

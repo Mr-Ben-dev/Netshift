@@ -51,7 +51,7 @@ Thumbs.db
 # Markdown files (except README)
 *.md
 !README.md
-
+!DOCUMENTATION.md
 # Markdown files (except README)
 *.md
 !README.md
