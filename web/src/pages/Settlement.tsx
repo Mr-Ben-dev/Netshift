@@ -67,6 +67,8 @@ export default function Settlement() {
   }, [settlement?.status]);
 
   // Validate pairs when ready (only once per settlement)
+  // DISABLED: Pair validation is redundant (backend validates during compute)
+  // and causes timeout issues on Render cold starts
   useEffect(() => {
     if (
       settlement?.status === "ready" &&
@@ -74,40 +76,11 @@ export default function Settlement() {
       settlement.nettingResult.netPayments.length > 0 &&
       validatedSettlementId !== settlementId
     ) {
-      const warnings: string[] = [];
-      const checkPairs = async () => {
-        console.log(
-          "[Settlement] Validating pairs for",
-          settlement.nettingResult!.netPayments.length,
-          "payments"
-        );
-        for (const payment of settlement.nettingResult!.netPayments) {
-          try {
-            const response = await fetch(
-              `${API_BASE}/api/pair?depositCoin=${payment.payToken}&depositNetwork=${payment.payChain}&settleCoin=${payment.receiveToken}&settleNetwork=${payment.receiveChain}&amount=${payment.payAmount}`
-            );
-            const data = await response.json();
-            if (data.success && data.data) {
-              const { min, max } = data.data;
-              const amount = payment.payAmount;
-              if (amount < parseFloat(min)) {
-                warnings.push(
-                  `${payment.recipient}: Amount ${amount} ${payment.payToken} is below minimum ${min}`
-                );
-              } else if (amount > parseFloat(max)) {
-                warnings.push(
-                  `${payment.recipient}: Amount ${amount} ${payment.payToken} exceeds maximum ${max}`
-                );
-              }
-            }
-          } catch (error) {
-            console.error("Pair validation error:", error);
-          }
-        }
-        setPairWarnings(warnings);
-        setValidatedSettlementId(settlementId);
-      };
-      checkPairs();
+      // Skip pair validation - backend already validated during compute
+      console.log(
+        "[Settlement] Skipping pair validation (already done in backend)"
+      );
+      setValidatedSettlementId(settlementId);
     }
   }, [
     settlement?.status,
