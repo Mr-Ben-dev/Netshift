@@ -241,7 +241,7 @@ export async function createFixedShift({
   };
   
   try {
-    console.log('[SideShift] Creating fixed shift:', { quoteId, settleAddress, affiliateId: CONFIG.sideshift.affiliateId });
+    console.log('[SideShift] Creating fixed shift with body:', body);
     const res = await retry(() =>
       limiterShifts.schedule(() => 
         http.post('/shifts/fixed', body, { 
