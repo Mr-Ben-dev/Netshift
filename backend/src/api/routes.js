@@ -664,11 +664,12 @@ router.post('/settlements/:id/execute', async (req, res) => {
       })));
     }
 
-    // If ALL orders failed, return error
+    // If ALL orders failed, return error with details
     if (successfulOrders.length === 0) {
+      const errorMessages = failedOrders.map(f => `${f.recipient}: ${f.error}`).join('; ');
       return res.status(400).json({ 
         success: false, 
-        error: 'All orders failed to create',
+        error: `All orders failed: ${errorMessages}`,
         failures: failedOrders
       });
     }
