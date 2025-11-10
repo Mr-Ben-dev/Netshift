@@ -603,13 +603,27 @@ router.post('/settlements/:id/execute', async (req, res) => {
           createdAt: new Date()
         });
       } catch (orderError) {
-        // Log individual order failures
-        console.error(`Failed to create shift for ${item.recipient}:`, orderError.message);
+        // Log individual order failures with full details
+        const errorDetails = {
+          recipient: item.recipient,
+          message: orderError.message,
+          responseData: orderError?.response?.data,
+          statusCode: orderError?.response?.status,
+          payToken: item.payToken,
+          payChain: item.payChain,
+          receiveToken: item.receiveToken,
+          receiveChain: item.receiveChain,
+          payAmount: item.payAmount,
+          settleAddress
+        };
+        console.error(`[Execute] Failed to create shift:`, JSON.stringify(errorDetails, null, 2));
+        
         orders.push({
           recipient: item.recipient,
           status: 'failed',
-          error: orderError?.response?.data?.message || orderError.message,
-          failureReason: orderError.message
+          error: orderError?.response?.data?.error?.message || orderError?.response?.data?.message || orderError.message,
+          failureReason: orderError.message,
+          details: errorDetails // Include full details for debugging
         });
       }
     }

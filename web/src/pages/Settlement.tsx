@@ -125,11 +125,22 @@ export default function Settlement() {
         navigate(`/proof/${settlementId}`);
       }, 1500);
     } catch (error: any) {
+      const failures = error?.response?.data?.failures;
+      const errorMessage =
+        failures && failures.length > 0
+          ? `Order creation failed:\n${failures
+              .map((f: any) => `• ${f.recipient}: ${f.error}`)
+              .join("\n")}`
+          : error.message || "Failed to execute settlement";
+
       toast({
-        title: "Error",
-        description: error.message,
+        title: "Execution Failed",
+        description: errorMessage,
         variant: "destructive",
       });
+
+      // Log full error details for debugging
+      console.error("[Execute] Full error:", error?.response?.data);
     }
   };
 
