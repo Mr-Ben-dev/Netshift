@@ -28,12 +28,13 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
 export default function Settlement() {
   const { batchId } = useParams();
+  const navigate = useNavigate();
   const settlementId = batchId || "";
   const {
     data: settlement,
@@ -143,10 +144,13 @@ export default function Settlement() {
       await executeSettlement.mutateAsync(settlementId);
       toast({
         title: "Settlement Executing",
-        description: "SideShift orders created.",
+        description: "SideShift orders created. Redirecting to proof page...",
       });
       refetch();
-      setActiveTab("orders");
+      // Redirect to Proof page after successful execution
+      setTimeout(() => {
+        navigate(`/proof/${settlementId}`);
+      }, 1500);
     } catch (error: any) {
       toast({
         title: "Error",
