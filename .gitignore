@@ -55,4 +55,7 @@ Thumbs.db
 # Markdown files (except README)
 *.md
 !README.md
-
+!PROJECT_COMPLETE_SUMMARY.md
+#test
+test-api.ps1
+test-create.ps1
