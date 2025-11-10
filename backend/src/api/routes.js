@@ -17,14 +17,14 @@ import { recommendDepositToken } from '../netting/optimizer.js';
 import { validateSettleDetails } from '../utils/addressValidation.js';
 import { extractUserIp, settlementCreateSchema } from '../utils/validation.js';
 import {
-    cancelOrder,
-    checkPermissions,
-    createFixedShift,
-    getCoins,
-    getPairs,
-    getShiftStatus,
-    requestFixedQuote,
-    validatePair
+  cancelOrder,
+  checkPermissions,
+  createFixedShift,
+  getCoins,
+  getPairs,
+  getShiftStatus,
+  requestFixedQuote,
+  validatePair
 } from './sideshift.v2.js';
 
 const router = Router();
@@ -588,7 +588,11 @@ router.post('/settlements/:id/execute', async (req, res) => {
           depositAmount: String(item.payAmount)
         });
 
-        const externalId = `netshift_${s.settlementId}_${item.recipient}_${Date.now()}`;
+        // Create a safe externalId with only alphanumeric chars and hyphens
+        // Format: netshift-settlementId-timestamp-randomSuffix
+        const randomSuffix = Math.random().toString(36).substring(2, 8);
+        const externalId = `netshift-${s.settlementId}-${Date.now()}-${randomSuffix}`;
+        
         const shift = await createFixedShift({
           userIp,
           quoteId: quote.id,
