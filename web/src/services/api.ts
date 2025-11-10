@@ -12,7 +12,7 @@ const API_BASE_URL =
 // Create axios instance with default config
 const apiClient: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 30000,
+  timeout: 60000, // 60s for Render cold starts + computation
   headers: {
     "Content-Type": "application/json",
   },
@@ -53,7 +53,7 @@ export const backend = {
 // Create axios instance with default config (legacy support)
 const legacyClient: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 30000,
+  timeout: 60000, // 60s for Render cold starts + computation
   headers: {
     "Content-Type": "application/json",
   },
