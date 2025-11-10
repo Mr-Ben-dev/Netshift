@@ -722,10 +722,18 @@ router.get('/settlements/:id/status', async (req, res) => {
     const orders = [];
     for (const o of (s.sideshiftOrders || [])) {
       const cur = await getShiftStatus(o.orderId);
+      
+      // Generate QR code if not present
+      let qrCode = o.qrCode;
+      if (!qrCode && o.depositAddress) {
+        qrCode = await QRCode.toDataURL(o.depositAddress);
+      }
+      
       orders.push({
         ...o.toObject?.() || o,
         status: cur.status,
-        txHash: cur?.settleTx?.hash || o.txHash || ''
+        txHash: cur?.settleTx?.hash || o.txHash || '',
+        qrCode
       });
     }
     
