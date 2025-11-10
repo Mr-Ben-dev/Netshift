@@ -56,31 +56,44 @@ export default function AnalyticsDashboard() {
 
   const fetchSettlements = async () => {
     try {
-      // TODO: Replace with actual API call
+      setLoading(true);
+      const API_BASE =
+        import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+      const response = await fetch(`${API_BASE}/api/settlements?limit=50`);
+      const json = await response.json();
+
+      if (json.success && json.data) {
+        const mapped = json.data.map((s: any) => ({
+          id: s.settlementId,
+          status: s.status,
+          createdAt: s.createdAt,
+          parties: new Set([
+            ...(s.obligations || []).map((o: any) => o.from),
+            ...(s.obligations || []).map((o: any) => o.to),
+          ]).size,
+          originalPayments: s.obligations?.length || 0,
+          optimizedPayments:
+            s.nettingResult?.netPayments?.length ||
+            s.sideshiftOrders?.length ||
+            0,
+          reductionPercent:
+            s.obligations?.length > 0
+              ? Math.round(
+                  (1 -
+                    (s.nettingResult?.netPayments?.length ||
+                      s.sideshiftOrders?.length ||
+                      0) /
+                      s.obligations.length) *
+                    100
+                )
+              : 0,
+          totalVolume: `$${(s.obligations || [])
+            .reduce((sum: number, o: any) => sum + parseFloat(o.amount), 0)
+            .toFixed(0)}`,
+        }));
+        setSettlements(mapped);
+      }
       setLoading(false);
-      // Mock data for demonstration
-      setSettlements([
-        {
-          id: "st_1a2405b54a79",
-          status: "completed",
-          createdAt: "2025-01-10T14:30:00Z",
-          parties: 3,
-          originalPayments: 6,
-          optimizedPayments: 2,
-          reductionPercent: 66.7,
-          totalVolume: "$5,420",
-        },
-        {
-          id: "st_2b3516c65b8a",
-          status: "executing",
-          createdAt: "2025-01-10T16:45:00Z",
-          parties: 5,
-          originalPayments: 20,
-          optimizedPayments: 4,
-          reductionPercent: 80,
-          totalVolume: "$12,850",
-        },
-      ]);
     } catch (error) {
       console.error("Failed to fetch settlements:", error);
       setLoading(false);

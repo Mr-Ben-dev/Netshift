@@ -346,6 +346,28 @@ router.post('/settlements/create', async (req, res) => {
 });
 
 /**
+ * GET /settlements
+ * List all settlements (for analytics dashboard)
+ */
+router.get('/settlements', async (req, res) => {
+  try {
+    const { limit = 50, status } = req.query;
+    const query = status ? { status } : {};
+    
+    const settlements = await Settlement.find(query)
+      .sort({ createdAt: -1 })
+      .limit(parseInt(limit))
+      .select('settlementId status createdAt obligations nettingResult sideshiftOrders')
+      .lean();
+    
+    res.json({ success: true, data: settlements });
+  } catch (e) {
+    console.error('[List] Error:', e);
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+/**
  * GET /settlements/:id
  * Get settlement details by ID
  */
