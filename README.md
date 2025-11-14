@@ -1,303 +1,433 @@
-# 🚀 NetShift - Multi-Party Settlement Optimization
+# NetShift 
 
-**The only B2B/enterprise-grade, multi-party settlement platform built on SideShift.ai**
-
-[![Live Demo](https://img.shields.io/badge/Demo-Live-success)](https://netshift.xyz)
-[![Wave 2](https://img.shields.io/badge/SideShift-Wave%202-blue)](https://sideshift.ai/buildathon)
-[![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
-
-> **Reduce crypto payments by 80% using graph-based netting algorithms + SideShift's 200+ asset cross-chain swaps**
+**Multi-Party Settlement Optimization Platform**
 
 ---
 
-## 🎯 Problem
+## 🚀 Quick Links
 
-Businesses waste **$50B+ annually** on inefficient multi-party settlements:
-
-- 🏭 **Supply chains**: 200 vendors = 1,000 monthly payments = $10K gas fees
-- 💼 **Trading desks**: 50 counterparties = daily reconciliation nightmare
-- 🏦 **DAO treasuries**: 500 grant recipients = 500 individual transactions
-
-**Current solutions**: Manual Excel reconciliation, expensive SWIFT transfers, or 1:1 crypto swaps (no optimization)
+- **Live Demo**: https://netshift.vercel.app
+- **Video Demo**: https://youtu.be/461uzdU5o4w
+- **GitHub**: https://github.com/Mr-Ben-dev/Netshift
+- **Backend API**: https://netshift.onrender.com
 
 ---
 
-## ✨ Solution
+## 📖 Table of Contents
 
-**NetShift** uses **graph-based netting algorithms** to eliminate 70-90% of payments:
-
-### Example: 3-Party Settlement
-
-```
-BEFORE (Manual):
-Alice → Bob:     100 USDC (pay $3 gas)
-Bob → Charlie:    50 ETH  (pay $5 gas)
-Charlie → Alice:  75 BTC  (pay $8 gas)
-TOTAL: 3 payments, $16 gas, 15 minutes
-
-AFTER (NetShift):
-Alice → Charlie: 25 USDC-equivalent (pay $3 gas)
-TOTAL: 1 payment, $3 gas, 2 minutes
-SAVINGS: 66% fewer payments, $13 saved, 13 minutes saved
-```
-
-### How It Works
-
-1. **Import**: Upload obligations via CSV (50+ parties supported) or manual entry
-2. **Compute**: Graph algorithm detects circular debts and optimizes payment flow
-3. **Execute**: SideShift converts assets across 200+ coins and 40+ chains
-4. **Track**: Real-time status with QR codes, countdown timers, and confirmations
+1. [Overview](#overview)
+2. [Features](#features)
+3. [Architecture](#architecture)
+4. [User Flow](#user-flow)
+5. [API Integration](#api-integration)
+6. [Technology Stack](#technology-stack)
+7. [Getting Started](#getting-started)
+8. [API Documentation](#api-documentation)
 
 ---
 
-## 🏆 Why NetShift Wins
+## 🎯 Overview
 
-### Unique in SideShift Buildathon (vs. 15 Wave 1 Winners)
+NetShift reduces crypto payment complexity by 70-90% through intelligent netting algorithms combined with SideShift.ai's multi-asset swap capabilities.
 
-| Feature               | NetShift                  | All Competitors      |
-| --------------------- | ------------------------- | -------------------- |
-| **Target Market**     | 🏢 B2B/Enterprise         | 👤 B2C Retail        |
-| **Users**             | Multi-party (5-100+)      | Single user          |
-| **Optimization**      | ✅ Graph netting          | ❌ None (1:1 swaps)  |
-| **Payment Reduction** | 70-90%                    | 0%                   |
-| **Proven**            | ✅ Real settlement tested | ❌ Most demos broken |
+### The Problem
 
-### Technical Excellence
+In traditional multi-party payment scenarios:
 
-- ✅ **Production-grade backend**: Node.js + Express + MongoDB Atlas
-- ✅ **SideShift v2 API**: Full integration with rate limiting (20 quotes/min)
-- ✅ **LRU caching**: 10min coins, 2min pairs for performance
-- ✅ **200+ assets**: Dynamic loading via `/api/coins` endpoint
-- ✅ **Geo-blocking compliance**: Permissions gating with `PermissionsGate`
-- ✅ **Real-time tracking**: 5s polling with React Query hooks
-- ✅ **Security**: No private key exposure, backend-only API calls
+- Alice owes Bob $100
+- Bob owes Charlie $100
+- Charlie owes Alice $100
+
+This requires **3 separate blockchain transactions** with associated gas fees and time delays.
+
+### The Solution
+
+NetShift's netting algorithm detects this circular debt and **eliminates all 3 payments** - everyone's obligations are settled without any transfers needed.
+
+For non-circular scenarios, we optimize by reducing payment count and using SideShift.ai for automatic cross-chain conversions (e.g., USDC → SOL, BTC → ETH).
 
 ---
 
-## 🚀 Quick Start
+## ✨ Features
 
-### Prerequisites
+### Core Functionality
 
-- Node.js 18+
-- MongoDB Atlas account
-- SideShift API key ([get one here](https://sideshift.ai/api))
+- **CSV Import**: Upload bulk payment obligations with automatic parsing
+- **Real-Time Validation**: Multi-chain address validation for 15+ networks
+- **Netting Algorithm**: Graph-based cycle detection (O(V+E) complexity)
+- **SideShift Integration**: Live quotes for 200+ assets across 40+ networks
+- **Visual Analytics**: Interactive payment flow graphs before/after optimization
+- **Order Tracking**: Real-time status updates with QR codes for deposits
+- **Cross-Chain Support**: Automatic token conversions via SideShift API
 
-### 1. Clone Repository
+### Production Features
 
-```bash
-git clone https://github.com/yourname/netshift.git
-cd netshift
-```
-
-### 2. Backend Setup
-
-```bash
-cd backend
-npm install
-
-# Configure environment
-cp .env.example .env
-# Edit .env with your credentials:
-# MONGODB_URI=mongodb+srv://...
-# SIDESHIFT_API_KEY=your_key_here
-# SIDESHIFT_AFFILIATE_ID=your_affiliate_id (optional)
-
-# Start backend
-npm run dev
-# Backend runs on http://localhost:5000
-```
-
-### 3. Frontend Setup
-
-```bash
-cd ../web
-npm install
-
-# Configure environment
-cp .env.example .env
-# Edit .env:
-# VITE_API_BASE_URL=http://localhost:5000
-
-# Start frontend
-npm run dev
-# Frontend runs on http://localhost:8080
-```
-
-### 4. Test the Demo
-
-1. Navigate to `http://localhost:8080`
-2. Click "Import Obligations"
-3. Download sample CSV or enter manually:
-   ```csv
-   from,to,amount,token,chain,receiveAddress,refundAddress
-   Alice,Bob,100,usdc,base,0xABC...,0xABC...
-   Bob,Charlie,50,usdc,base,0xDEF...,0xDEF...
-   Charlie,Alice,75,usdc,base,0x123...,0x123...
-   ```
-4. Click "Create Settlement" → View netting results
-5. Execute → SideShift creates orders with QR codes
-
----
-
-## 📊 Proven Results
-
-### Real Settlement: `st_1a2405b54a79`
-
-- **Parties**: 3 (Alice, Bob, Charlie)
-- **Original Payments**: 2
-- **Optimized Payments**: 0 (100% reduction - perfect netting!)
-- **Status**: ✅ Completed
-- **Screenshot**: [View Result](docs/settlement-proof.png)
-
-### Case Studies (Projected)
-
-1. **Supply Chain**: 200 vendors → 150 payments saved/month = **$8.5K saved**
-2. **Trading Desk**: 50 counterparties → 70% reduction = **5 hours/day saved**
-3. **DAO Treasury**: 500 recipients → 90% reduction = **$20K gas saved**
-
----
-
-## 🎬 Demo Video
-
-[![NetShift Demo Video](https://img.youtube.com/vi/YOUR_VIDEO_ID/0.jpg)](https://youtu.be/YOUR_VIDEO_ID)
-
-**5-minute walkthrough showing:**
-
-1. CSV upload (50 obligations)
-2. Real-time netting computation (80% reduction)
-3. SideShift execution with QR codes
-4. Analytics dashboard with savings metrics
+- **Rate Limiting**: 300ms between SideShift API calls
+- **Quote Management**: 15-minute fixed-rate locks
+- **Error Handling**: Comprehensive retry logic with exponential backoff
+- **Security**: CORS protection, Helmet headers, IP forwarding
+- **Persistent Storage**: MongoDB Atlas with 0.0.0.0/0 network access
+- **Cold Start Handling**: 60-second timeout for Render free tier
 
 ---
 
 ## 🏗️ Architecture
 
+### Frontend (Vercel)
+
 ```
-┌─────────────┐      ┌─────────────┐      ┌─────────────┐
-│  Frontend   │─────▶│   Backend   │─────▶│  SideShift  │
-│  React+TS   │      │   Node.js   │      │     API     │
-│  Vite+TQ    │      │  Express+DB │      │  200+ coins │
-└─────────────┘      └─────────────┘      └─────────────┘
-       │                     │
-       │                     ▼
-       │             ┌─────────────┐
-       │             │  MongoDB    │
-       │             │   Atlas     │
-       │             └─────────────┘
-       │
-       ▼
-┌─────────────────────────────────────────────┐
-│  Components:                                │
-│  • AssetSelect (200+ assets, fuzzy search) │
-│  • OrderCard (QR codes, countdown timers)  │
-│  • PermissionsGate (geo-blocking)          │
-│  • Analytics (real-time metrics)           │
-└─────────────────────────────────────────────┘
+React 19 + TypeScript + Vite
+├── Pages: Landing, Import, Settlement, Proof, Dashboard, Analytics
+├── Components: 50+ shadcn/ui components + custom OrderCard, SettlementGraph
+├── State: TanStack Query for data fetching
+└── Styling: Tailwind CSS with custom animations
 ```
 
-### Tech Stack
+### Backend (Render)
 
-- **Backend**: Node.js, Express, MongoDB, Bottleneck (rate limiting), LRU-cache
-- **Frontend**: React 18, TypeScript, Vite, TanStack Query, Radix UI, Tailwind CSS
-- **Integration**: SideShift v2 API (quotes, shifts, status, permissions)
-- **Deployment**: Railway/Render (backend), Vercel (frontend)
+```
+Node.js + Express
+├── API Routes: 15 endpoints for settlements, SideShift, analytics
+├── Database: MongoDB Atlas (Mongoose ODM)
+├── External APIs: SideShift v2 (8 endpoints integrated)
+└── Utils: Address validation, QR generation, rate limiting
+```
 
----
+### Database Schema
 
-## 📚 Documentation
-
-- [**Technical Architecture**](TECHNICAL_ARCHITECTURE.md) - System design, database schema, API docs
-- [**Case Studies**](CASE_STUDIES.md) - Real-world examples with ROI calculations
-- [**Competitive Analysis**](COMPETITIVE_ANALYSIS.md) - How NetShift beats 15 Wave 1 winners
-- [**Wave 2 Plan**](WAVE2_IMPLEMENTATION_PLAN.md) - Roadmap and success metrics
-- [**Deployment Guide**](DEPLOYMENT.md) - Production setup instructions
-
----
-
-## 🌟 Features
-
-### Core
-
-- ✅ **Multi-party netting**: Graph algorithm eliminates circular debts
-- ✅ **CSV bulk import**: Upload 50+ obligations in seconds
-- ✅ **200+ asset support**: Dynamic loading from SideShift API
-- ✅ **Cross-chain swaps**: Any coin on 40+ blockchains
-- ✅ **Real-time tracking**: 5s polling with status updates
-- ✅ **QR code deposits**: Mobile-friendly payment instructions
-- ✅ **Geo-blocking**: Compliance with SideShift restrictions
-
-### Advanced
-
-- ✅ **Analytics dashboard**: Payment reduction %, gas savings, volume
-- ✅ **Countdown timers**: 15-minute quote expiry tracking
-- ✅ **Memo warnings**: Auto-detect networks requiring tags
-- ✅ **Responsive design**: Mobile-optimized UI
-- 🔄 **Graph visualization**: Before/after payment flows (coming soon)
-- 🔄 **Smart contract escrow**: Trustless settlements on Polygon (coming soon)
+```javascript
+Settlement {
+  settlementId: String (unique),
+  status: String (draft, ready, executing, completed),
+  obligations: [{ from, to, amount, token }],
+  recipientPreferences: [{ party, receiveToken, receiveChain, receiveAddress }],
+  nettingResult: {
+    netPayments: [{ payer, recipient, payAmount, receiveAmount, receiveAddress }],
+    rates: Object,
+    savings: Object
+  },
+  sideshiftOrders: [{ orderId, depositAddress, qrCode, status, ... }]
+}
+```
 
 ---
 
-## 📈 Metrics
+## 📱 User Flow
 
-### Wave 1 Results
+### 1. Import (CSV or Manual)
 
-- ✅ Backend v0.3.0 running successfully
-- ✅ Settlement `st_1a2405b54a79` completed (100% reduction)
-- ✅ Frontend fully integrated with all components
-- ✅ CSV import working (tested with 10+ obligations)
+- Upload CSV with columns: from, to, amount, token
+- System validates addresses for target blockchains
+- Set recipient preferences (preferred token/chain/address)
 
-### Wave 2 Targets
+### 2. Compute
 
-- [ ] 99.9% uptime during judging period
-- [ ] 5-party settlement executed with real SideShift swaps
-- [ ] 80%+ payment reduction demonstrated
-- [ ] Professional demo video (5 minutes)
-- [ ] 3 documented case studies
+- Click "Compute Netting" button
+- Algorithm runs DFS to detect cycles
+- Fetches real-time SideShift rates
+- Shows before/after payment visualization
+- Displays percentage reduction (typically 70-90%)
+
+### 3. Execute
+
+- Click "Execute Settlement" button
+- Creates SideShift fixed-rate orders (15-min expiry)
+- Generates QR codes for deposit addresses
+- Returns order IDs and deposit instructions
+
+### 4. Track & Complete
+
+- View Orders tab with live status polling (5s intervals)
+- See QR codes, countdown timers, copy buttons
+- Monitor: waiting → confirming → exchanging → completed
+- After completion, view Proof page with settlement summary
 
 ---
 
-## 🤝 Contributing
+## 🔌 API Integration
 
-We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+### SideShift.ai v2 Integration
 
-### Roadmap
+We integrate **8 SideShift API endpoints**:
 
-- **Wave 2**: Production deployment, graph visualization, smart contracts
-- **Wave 3**: Mainnet launch, wallet integrations, DAO partnerships
-- **2025 Q2**: 100 businesses using NetShift
-- **2025 Q3**: $10M total volume processed
-- **2025 Q4**: Series A fundraising
+1. **GET /v2/coins**: List 200+ supported assets
+2. **GET /v2/permissions**: Check user geo-restrictions
+3. **GET /v2/pair/:from/:to**: Get min/max amounts and rates
+4. **POST /v2/quotes**: Create fixed-rate quote (15-min lock)
+5. **POST /v2/shifts/fixed**: Create order with quoteId
+6. **GET /v2/shifts/:id**: Poll order status
+7. **POST /v2/shifts/:id/cancel**: Cancel order after 5 minutes
+8. **GET /v2/coins/icon/:coin**: Fetch token logos
+
+### Rate Limiting
+
+- **300ms minimum** between SideShift API calls (Bottleneck.js)
+- Retry logic with exponential backoff on failures
+- Caches coin list and icons for 24 hours
+
+### Commission Structure
+
+- 2% commission rate on all swaps
+- Affiliate ID: `EKN8DnZ9w`
+- Commission calculated server-side
 
 ---
+
+## 🛠️ Technology Stack
+
+### Frontend
+
+- **React 19** - Latest React features
+- **TypeScript** - Type safety
+- **Vite** - Fast build tool
+- **TanStack Query** - Data fetching & caching
+- **Tailwind CSS** - Utility-first styling
+- **shadcn/ui** - Component library
+- **Framer Motion** - Animations
+- **Recharts** - Data visualization
+
+### Backend
+
+- **Node.js 20** - Runtime
+- **Express** - Web framework
+- **MongoDB Atlas** - Database (M0 free tier)
+- **Mongoose** - ODM
+- **QRCode** - QR generation
+- **Bottleneck** - Rate limiting
+- **Helmet** - Security headers
+- **async-retry** - Retry logic
+
+### DevOps
+
+- **Vercel** - Frontend hosting (automatic deploys from GitHub)
+- **Render** - Backend hosting (free tier with cold starts)
+- **GitHub Actions** - CI/CD (optional)
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+- Node.js 20+
+- MongoDB database
+- SideShift affiliate account
+
+### Installation
+
+1. **Clone repository**
+
+```bash
+git clone https://github.com/Mr-Ben-dev/Netshift.git
+cd Netshift
+```
+
+2. **Backend setup**
+
+```bash
+cd backend
+npm install
+cp .env.example .env
+# Edit .env with your credentials
+npm run dev
+```
+
+3. **Frontend setup**
+
+```bash
+cd web
+npm install
+cp .env.example .env
+# Edit .env with backend URL
+npm run dev
+```
+
+### Environment Variables
+
+**Backend (.env)**
+
+```env
+PORT=5000
+MONGODB_URI=mongodb+srv://...
+NODE_ENV=development
+SIDESHIFT_SECRET=your_sideshift_secret
+AFFILIATE_ID=your_affiliate_id
+COMMISSION_RATE=0.02
+CORS_ORIGIN=http://localhost:5173
+```
+
+**Frontend (.env)**
+
+```env
+VITE_API_BASE_URL=http://localhost:5000
+```
+
+### Running Tests
+
+```bash
+# Backend unit tests
+cd backend
+npm test
+
+# Backend smoke tests (requires live API)
+npm run smoke-test
+```
+
+---
+
+## 📚 API Documentation
+
+### Settlement Endpoints
+
+#### POST /api/settlements/create
+
+Create a new settlement with obligations.
+
+**Request:**
+
+```json
+{
+  "obligations": [
+    { "from": "Alice", "to": "Bob", "amount": "100", "token": "USDC" }
+  ],
+  "recipientPreferences": [
+    {
+      "party": "Bob",
+      "receiveToken": "sol",
+      "receiveChain": "solana",
+      "receiveAddress": "7EcDhSYGxXyscszYEp35KHN8vvw3svAuLKTzXwCFLtV"
+    }
+  ]
+}
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "settlementId": "st_abc123",
+    "status": "draft"
+  }
+}
+```
+
+#### GET /api/settlements
+
+List all settlements (for dashboard/analytics).
+
+**Query Params:**
+
+- `limit` (default: 50)
+- `status` (optional filter)
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "settlementId": "st_abc123",
+      "status": "completed",
+      "createdAt": "2025-11-10T18:00:00Z",
+      "obligations": [...],
+      "nettingResult": {...}
+    }
+  ]
+}
+```
+
+#### GET /api/settlements/:id
+
+Get settlement details by ID.
+
+#### POST /api/settlements/:id/compute
+
+Run netting algorithm and fetch SideShift rates.
+
+#### POST /api/settlements/:id/execute
+
+Create SideShift orders for net payments.
+
+#### GET /api/settlements/:id/status
+
+Poll order statuses (includes QR codes).
+
+### SideShift Proxy Endpoints
+
+#### GET /api/coins
+
+List supported coins and networks.
+
+#### GET /api/pair/:from/:to
+
+Get rate quote for a trading pair.
+
+#### POST /api/permissions
+
+Check if user IP is allowed (geo-blocking).
+
+---
+
+## 📊 Real Data vs Demo
+
+### What's Real
+
+✅ SideShift API integration (no mocks)
+✅ MongoDB storage (persistent)
+✅ Address validation (15+ chains)
+✅ QR code generation
+✅ Rate limiting and retries
+✅ Analytics from database
+✅ Order status polling
+
+### Demo/Placeholder
+
+⚠️ Orders created in "test mode" (no real blockchain txs)
+⚠️ Quotes expire after 15 minutes
+⚠️ Render cold starts (30s delay on first request)
+
+### Test Flow
+
+To test the full flow:
+
+1. Import sample CSV from `backend/demo/`
+2. Set real blockchain addresses for recipients
+3. Compute netting → Execute → View orders
+4. QR codes and countdown timers will appear
+5. Orders expire after 15 min without deposits
+
+---
+
+## 🎥 Video Demo
+
+Watch the complete walkthrough: https://youtu.be/461uzdU5o4w
+
+**Demonstrates:**
+
+- CSV import with 17 obligations
+- Netting computation (76% reduction)
+- Real SideShift rate quotes
+- Order execution with QR codes
+- Dashboard and analytics views
+
+---
+
 
 ## 📄 License
 
-MIT License - see [LICENSE](LICENSE) file for details.
+MIT License - See LICENSE file for details
 
 ---
 
-## 🙏 Acknowledgments
+## 🔗 Links
 
-- **SideShift.ai** - For the incredible cross-chain swap infrastructure
-- **SideShift Buildathon** - For pushing us to build production-grade solutions
-- **Community** - For feedback and support throughout Wave 1
-
----
-
-## 📞 Contact
-
-- **Website**: [netshift.xyz](https://netshift.xyz)
-- **Twitter**: [@NetShiftApp](https://twitter.com/NetShiftApp)
-- **Discord**: [Join our server](https://discord.gg/netshift)
-- **Email**: team@netshift.xyz
+- **Live App**: https://netshift.vercel.app
+- **GitHub**: https://github.com/Mr-Ben-dev/Netshift
+- **SideShift.ai**: https://sideshift.ai
+- **Documentation**: This file
 
 ---
 
-<div align="center">
-
-**Built with ❤️ for the SideShift.ai Buildathon Wave 2**
-
-[![Star on GitHub](https://img.shields.io/github/stars/yourname/netshift?style=social)](https://github.com/yourname/netshift)
-[![Follow on Twitter](https://img.shields.io/twitter/follow/NetShiftApp?style=social)](https://twitter.com/NetShiftApp)
-
-</div>
