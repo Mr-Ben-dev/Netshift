@@ -297,9 +297,40 @@ export default function Settlement() {
       </div>
     );
 
+  // Show computing state when settlement is in draft and being computed
+  const isComputing = settlement.status === "draft" || computeNetting.isPending;
+
   const netPayments = settlement.nettingResult?.netPayments || [];
   const orders = status?.orders || settlement.sideshiftOrders || [];
   const savings = settlement.nettingResult?.savings;
+
+  // Computing overlay
+  if (isComputing) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+        <main className="flex-1 flex items-center justify-center p-4">
+          <div className="text-center">
+            <Loader2 className="w-12 h-12 animate-spin mx-auto mb-4 text-cyan-400" />
+            <h2 className="text-xl font-semibold mb-2">
+              Computing Settlement...
+            </h2>
+            <p className="text-muted-foreground max-w-md">
+              Fetching exchange rates from SideShift and optimizing payment
+              flows. This may take 30-60 seconds.
+            </p>
+            <div className="mt-4 flex items-center justify-center gap-2 text-sm text-muted-foreground">
+              <div className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse" />
+              <span>
+                Processing {settlement.obligations?.length || 0} obligations...
+              </span>
+            </div>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col">

@@ -102,10 +102,22 @@ export function quickValidateAddress(
 
   // Bitcoin
   if (networkLower === "bitcoin") {
-    if (!/^(1|3|bc1)[a-zA-Z0-9]{25,87}$/.test(address)) {
+    // Check for Taproot addresses (not supported by SideShift)
+    if (/^bc1p[a-z0-9]{58}$/.test(address)) {
       return {
         valid: false,
-        hint: "Bitcoin addresses start with 1, 3, or bc1",
+        hint: "Taproot (bc1p) addresses are not supported. Use a SegWit address starting with bc1q, or legacy (1 or 3)",
+      };
+    }
+    // Valid: Legacy (1), P2SH (3), SegWit (bc1q)
+    if (
+      !/^(1[a-km-zA-HJ-NP-Z1-9]{25,34}|3[a-km-zA-HJ-NP-Z1-9]{25,34}|bc1q[a-z0-9]{38,58})$/.test(
+        address
+      )
+    ) {
+      return {
+        valid: false,
+        hint: "Use addresses starting with 1, 3, or bc1q (not bc1p Taproot)",
       };
     }
     return { valid: true };

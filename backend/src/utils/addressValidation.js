@@ -26,7 +26,8 @@ export function isEvmAddress(address) {
 
 /**
  * Validate Bitcoin address (mainnet)
- * Supports P2PKH, P2SH, Bech32
+ * Supports P2PKH, P2SH, Bech32 (SegWit)
+ * NOTE: Taproot (bc1p) addresses are NOT supported by SideShift
  */
 export function isBtcAddress(address) {
   if (!address || typeof address !== 'string') return false;
@@ -35,10 +36,18 @@ export function isBtcAddress(address) {
   const p2pkhRegex = /^[1][a-km-zA-HJ-NP-Z1-9]{25,34}$/;
   // P2SH (starts with 3)
   const p2shRegex = /^[3][a-km-zA-HJ-NP-Z1-9]{25,34}$/;
-  // Bech32 (starts with bc1)
-  const bech32Regex = /^(bc1)[a-z0-9]{39,87}$/;
+  // Bech32 SegWit (starts with bc1q) - NOT bc1p (Taproot)
+  const bech32Regex = /^(bc1q)[a-z0-9]{38,58}$/;
   
   return p2pkhRegex.test(address) || p2shRegex.test(address) || bech32Regex.test(address);
+}
+
+/**
+ * Check if address is Taproot (unsupported by SideShift)
+ */
+export function isTaprootAddress(address) {
+  if (!address || typeof address !== 'string') return false;
+  return /^(bc1p)[a-z0-9]{58}$/.test(address);
 }
 
 /**
@@ -201,12 +210,20 @@ export function validateSettleDetails(coin, network, address, memo) {
     };
   }
   
+  // Special check for Taproot addresses (not supported by SideShift)
+  if (networkLower === 'bitcoin' && address?.startsWith('bc1p')) {
+    return {
+      ok: false,
+      reason: `Taproot (bc1p) addresses are not supported. Please use a SegWit address starting with bc1q, or a legacy address starting with 1 or 3.`,
+    };
+  }
+  
   // Validate address format
   const isValidAddress = validator(address);
   if (!isValidAddress) {
     let hint = '';
     if (networkLower === 'bitcoin') {
-      hint = 'Bitcoin addresses start with 1, 3, or bc1';
+      hint = 'Use addresses starting with 1, 3, or bc1q (not bc1p Taproot)';
     } else if (['ethereum', 'polygon', 'bsc', 'arbitrum', 'optimism', 'base'].includes(networkLower)) {
       hint = 'EVM addresses start with 0x and are 42 characters';
     } else if (networkLower === 'solana') {
