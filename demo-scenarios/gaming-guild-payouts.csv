@@ -1,0 +1,8 @@
+from,to,amount,token,chain
+GuildTreasury,Scholar1,80,SLP,ethereum
+GuildTreasury,Scholar2,120,SLP,ethereum
+GuildTreasury,Scholar3,95,SLP,ethereum
+Scholar1,Manager,25,USDC,polygon
+Scholar2,Manager,35,USDC,polygon
+Scholar3,Manager,30,USDC,polygon
+Manager,GuildTreasury,50,USDC,polygon

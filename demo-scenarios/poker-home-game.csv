@@ -1,0 +1,7 @@
+from,to,amount,token,chain
+Mike,Sarah,150,USDC,base
+Sarah,Dave,85,USDC,base
+Dave,Lisa,120,USDC,base
+Lisa,Mike,200,USDC,base
+Mike,Dave,50,USDC,base
+Sarah,Lisa,75,USDC,base

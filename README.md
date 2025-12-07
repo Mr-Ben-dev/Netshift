@@ -11,11 +11,11 @@
 
 ## 🌐 Live Demo
 
-| Service | URL |
-|---------|-----|
-| **Frontend** | https://netshift.vercel.app |
-| **Backend API** | https://netshift.onrender.com |
-| **GitHub** | https://github.com/Mr-Ben-dev/Netshift |
+| Service         | URL                                    |
+| --------------- | -------------------------------------- |
+| **Frontend**    | https://netshift.vercel.app            |
+| **Backend API** | https://netshift.onrender.com          |
+| **GitHub**      | https://github.com/Mr-Ben-dev/Netshift |
 
 ---
 
@@ -30,7 +30,7 @@ When multiple parties owe each other money, the traditional approach requires ma
 ```
 Without NetShift (17 payments):
 ├── Alice → Bob: $100
-├── Bob → Charlie: $80  
+├── Bob → Charlie: $80
 ├── Charlie → Dave: $60
 ├── Dave → Alice: $40
 ├── Alice → Charlie: $30
@@ -74,14 +74,14 @@ Time: Minutes with automation
 
 ### Core Features
 
-| Feature | Description |
-|---------|-------------|
-| **Multi-Party Netting** | Graph algorithm detects circular debts and computes optimal net payments |
-| **Cross-Chain Settlement** | Support for 200+ crypto assets across 40+ blockchain networks |
-| **CSV Import** | Bulk upload obligations from spreadsheets |
-| **Real-Time Tracking** | Live status updates with 5-second polling |
-| **QR Code Deposits** | Mobile-friendly deposit addresses |
-| **Fixed-Rate Quotes** | Lock in exchange rates for 15 minutes with zero slippage |
+| Feature                    | Description                                                              |
+| -------------------------- | ------------------------------------------------------------------------ |
+| **Multi-Party Netting**    | Graph algorithm detects circular debts and computes optimal net payments |
+| **Cross-Chain Settlement** | Support for 200+ crypto assets across 40+ blockchain networks            |
+| **CSV Import**             | Bulk upload obligations from spreadsheets                                |
+| **Real-Time Tracking**     | Live status updates with 5-second polling                                |
+| **QR Code Deposits**       | Mobile-friendly deposit addresses                                        |
+| **Fixed-Rate Quotes**      | Lock in exchange rates for 15 minutes with zero slippage                 |
 
 ### Supported Assets
 
@@ -109,6 +109,7 @@ Charlie,Alice,60,usdc,polygon,0x9ABC...,0x123...
 ### Step 2: Compute Netting
 
 The algorithm analyzes the payment graph and:
+
 1. Detects all circular debt relationships
 2. Cancels out offsetting obligations
 3. Computes minimum required net transfers
@@ -117,6 +118,7 @@ The algorithm analyzes the payment graph and:
 ### Step 3: Execute Settlement
 
 For each required payment:
+
 1. NetShift creates a SideShift order
 2. Sender receives deposit address + QR code
 3. Sender deposits crypto to the address
@@ -172,32 +174,35 @@ For each required payment:
 ## 🛠️ Tech Stack
 
 ### Frontend
-| Technology | Purpose |
-|------------|---------|
-| React 19 | UI Framework |
-| TypeScript | Type Safety |
-| Vite | Build Tool |
-| TailwindCSS | Styling |
-| Framer Motion | Animations |
-| React Query | Data Fetching |
-| React Router | Navigation |
-| Radix UI | Components |
+
+| Technology    | Purpose       |
+| ------------- | ------------- |
+| React 19      | UI Framework  |
+| TypeScript    | Type Safety   |
+| Vite          | Build Tool    |
+| TailwindCSS   | Styling       |
+| Framer Motion | Animations    |
+| React Query   | Data Fetching |
+| React Router  | Navigation    |
+| Radix UI      | Components    |
 
 ### Backend
-| Technology | Purpose |
-|------------|---------|
-| Node.js | Runtime |
-| Express | Web Framework |
-| MongoDB Atlas | Database |
-| Axios | HTTP Client |
-| LRU Cache | Performance |
+
+| Technology    | Purpose       |
+| ------------- | ------------- |
+| Node.js       | Runtime       |
+| Express       | Web Framework |
+| MongoDB Atlas | Database      |
+| Axios         | HTTP Client   |
+| LRU Cache     | Performance   |
 
 ### External Services
-| Service | Purpose |
-|---------|---------|
+
+| Service      | Purpose           |
+| ------------ | ----------------- |
 | SideShift.ai | Cross-chain swaps |
-| Vercel | Frontend hosting |
-| Render | Backend hosting |
+| Vercel       | Frontend hosting  |
+| Render       | Backend hosting   |
 
 ---
 
@@ -225,6 +230,7 @@ npm install
 ```
 
 Create `.env` file:
+
 ```env
 PORT=5000
 MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/netshift
@@ -233,6 +239,7 @@ NODE_ENV=development
 ```
 
 Start the server:
+
 ```bash
 npm run dev
 ```
@@ -247,11 +254,13 @@ npm install
 ```
 
 Create `.env` file:
+
 ```env
 VITE_API_URL=http://localhost:5000
 ```
 
 Start the dev server:
+
 ```bash
 npm run dev
 ```
@@ -263,31 +272,37 @@ Frontend runs at `http://localhost:5173`
 ## 📡 API Reference
 
 ### Base URL
+
 - **Development**: `http://localhost:5000`
 - **Production**: `https://netshift.onrender.com`
 
 ### Endpoints
 
 #### Get Supported Coins
+
 ```http
 GET /api/coins
 ```
+
 Returns list of 200+ supported cryptocurrencies.
 
 #### Get Trading Pair
+
 ```http
 GET /api/pair?depositCoin=usdc&depositNetwork=base&settleCoin=eth&settleNetwork=ethereum&amount=100
 ```
+
 Returns exchange rate and min/max amounts.
 
 #### Create Shift Order
+
 ```http
 POST /api/shift
 Content-Type: application/json
 
 {
   "depositCoin": "usdc",
-  "depositNetwork": "base", 
+  "depositNetwork": "base",
   "settleCoin": "eth",
   "settleNetwork": "ethereum",
   "settleAddress": "0x...",
@@ -295,15 +310,19 @@ Content-Type: application/json
   "depositAmount": "100"
 }
 ```
+
 Returns deposit address, QR code, and shift ID.
 
 #### Check Shift Status
+
 ```http
 GET /api/shift/:shiftId
 ```
+
 Returns current status: `pending`, `deposited`, `confirming`, `settled`, `failed`.
 
 #### Create Settlement
+
 ```http
 POST /api/settlements
 Content-Type: application/json
@@ -312,7 +331,7 @@ Content-Type: application/json
   "obligations": [
     {
       "from": "Alice",
-      "to": "Bob", 
+      "to": "Bob",
       "amount": 100,
       "token": "usdc",
       "network": "base",
@@ -322,12 +341,15 @@ Content-Type: application/json
   ]
 }
 ```
+
 Creates settlement and computes netting.
 
 #### Get Settlement
+
 ```http
 GET /api/settlements/:id
 ```
+
 Returns settlement details with netting results.
 
 ---
@@ -379,7 +401,14 @@ NetShift/
 │   │   └── logo.png
 │   └── package.json
 │
-├── test-csvs/                  # Sample CSV files
+├── demo-scenarios/             # Real-world demo CSV files
+│   ├── poker-home-game.csv    # Poker night settlement
+│   ├── dao-contributor-payments.csv
+│   ├── agency-payroll.csv
+│   ├── gaming-guild-payouts.csv
+│   └── otc-desk-settlement.csv
+│
+├── test-csvs/                  # Technical test CSV files
 │   ├── A-simple-cycle.csv
 │   ├── B-partial-cycle.csv
 │   └── C-cross-chain.csv
@@ -389,20 +418,38 @@ NetShift/
 
 ---
 
+## 🎮 Demo Scenarios
+
+Try these real-world examples to see NetShift in action:
+
+| Scenario                     | Description                              | File                                          |
+| ---------------------------- | ---------------------------------------- | --------------------------------------------- |
+| **Poker Home Game**          | 4 players settling weekly game           | `demo-scenarios/poker-home-game.csv`          |
+| **DAO Contributor Payments** | Treasury payroll with multi-chain tokens | `demo-scenarios/dao-contributor-payments.csv` |
+| **Agency Payroll**           | Design agency client→freelancer flows    | `demo-scenarios/agency-payroll.csv`           |
+| **Gaming Guild Payouts**     | P2E scholar earnings & manager fees      | `demo-scenarios/gaming-guild-payouts.csv`     |
+| **OTC Desk Settlement**      | Trading desk bilateral settlements       | `demo-scenarios/otc-desk-settlement.csv`      |
+
+See [demo-scenarios/README.md](demo-scenarios/README.md) for detailed documentation.
+
+---
+
 ## 🧮 Netting Algorithm
 
 The core algorithm uses graph theory to minimize payments:
 
 ### Input
+
 ```javascript
 obligations = [
   { from: "A", to: "B", amount: 100 },
   { from: "B", to: "C", amount: 80 },
   { from: "C", to: "A", amount: 60 },
-]
+];
 ```
 
 ### Process
+
 1. **Build Graph**: Create directed graph with parties as nodes
 2. **Compute Net Balances**: Sum inflows and outflows per party
 3. **Detect Cycles**: Find circular debt relationships
@@ -410,11 +457,12 @@ obligations = [
 5. **Minimize Transfers**: Compute minimum spanning payment tree
 
 ### Output
+
 ```javascript
 netPayments = [
-  { from: "A", to: "B", amount: 40 },  // 100 - 60 = 40 net
-  { from: "B", to: "C", amount: 20 },  // 80 - 60 = 20 net
-]
+  { from: "A", to: "B", amount: 40 }, // 100 - 60 = 40 net
+  { from: "B", to: "C", amount: 20 }, // 80 - 60 = 20 net
+];
 // Reduced from 3 payments to 2 (33% reduction)
 // In complex cases, reduction can be 70-90%
 ```

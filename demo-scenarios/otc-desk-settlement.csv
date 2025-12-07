@@ -1,0 +1,7 @@
+from,to,amount,token,chain
+DeskA,DeskB,10000,USDC,base
+DeskB,DeskC,8500,USDT,ethereum
+DeskC,DeskA,7200,USDC,base
+DeskA,DeskC,3000,BTC,bitcoin
+DeskB,DeskA,2500,ETH,ethereum
+DeskC,DeskB,4500,USDC,polygon

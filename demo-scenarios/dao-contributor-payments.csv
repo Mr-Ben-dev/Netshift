@@ -1,0 +1,8 @@
+from,to,amount,token,chain
+Treasury,Alice,500,USDC,ethereum
+Treasury,Bob,750,ETH,ethereum
+Treasury,Charlie,300,USDC,base
+Treasury,Diana,450,USDT,polygon
+Alice,Treasury,100,USDC,ethereum
+Bob,Treasury,50,ETH,ethereum
+Charlie,Treasury,25,USDC,base
