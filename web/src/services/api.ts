@@ -32,6 +32,11 @@ export const backend = {
     apiClient.post("/api/settlements/create", payload).then((r) => r.data.data),
   getSettlement: (id: string) =>
     apiClient.get(`/api/settlements/${id}`).then((r) => r.data.data),
+  updateSettlement: (
+    id: string,
+    updates: { name?: string; tags?: string[]; groupId?: string }
+  ) =>
+    apiClient.patch(`/api/settlements/${id}`, updates).then((r) => r.data.data),
   compute: (id: string) =>
     apiClient.post(`/api/settlements/${id}/compute`).then((r) => r.data.data),
   execute: (id: string, userIp?: string) =>
@@ -46,6 +51,7 @@ export const backend = {
       .then((r) => r.data.data),
   status: (id: string) =>
     apiClient.get(`/api/settlements/${id}/status`).then((r) => r.data.data),
+  analytics: () => apiClient.get("/api/analytics").then((r) => r.data.data),
   exportData: (id: string, format: "json" | "csv" = "json") =>
     apiClient.get(`/api/settlements/${id}/export?format=${format}`),
 };
@@ -342,6 +348,46 @@ export const validateAddress = async (params: {
 }> => {
   const response = await apiClient.post("/api/validate-address", params);
   return response.data;
+};
+
+/**
+ * Update settlement metadata (name, tags, etc.)
+ */
+export const updateSettlementMeta = async (
+  settlementId: string,
+  updates: {
+    name?: string;
+    description?: string;
+    tags?: string[];
+  }
+): Promise<Settlement> => {
+  const response = await apiClient.patch(
+    `/api/settlements/${settlementId}/meta`,
+    updates
+  );
+  return response.data.data;
+};
+
+/**
+ * Get analytics data
+ */
+export const getAnalytics = async (): Promise<{
+  totalSettlements: number;
+  totalVolume: number;
+  totalSaved: number;
+  avgReduction: number;
+  byStatus: Record<string, number>;
+  recentSettlements: Array<{
+    id: string;
+    status: string;
+    obligationCount: number;
+    createdAt: string;
+  }>;
+  popularTokens: Array<{ token: string; count: number; volume: number }>;
+  popularChains: Array<{ chain: string; count: number }>;
+}> => {
+  const response = await apiClient.get("/api/analytics");
+  return response.data.data;
 };
 
 /**

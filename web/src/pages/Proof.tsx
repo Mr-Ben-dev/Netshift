@@ -112,14 +112,33 @@ export default function Proof() {
             transition={{ duration: 0.5, type: "spring" }}
             className="text-center mb-12"
           >
-            <div className="inline-flex items-center justify-center w-24 h-24 rounded-full gradient-bg-success mb-6 animate-pulse">
-              <CheckCircle2 className="w-12 h-12 text-white" />
+            <div
+              className={`inline-flex items-center justify-center w-24 h-24 rounded-full mb-6 ${
+                isComplete
+                  ? "gradient-bg-success animate-pulse"
+                  : "gradient-bg-primary"
+              }`}
+            >
+              {isComplete ? (
+                <CheckCircle2 className="w-12 h-12 text-white" />
+              ) : (
+                <Loader2 className="w-12 h-12 text-white animate-spin" />
+              )}
             </div>
             <h1 className="text-5xl font-bold gradient-text-cyan-blue mb-4">
-              Settlement Complete! ✓
+              {isComplete
+                ? "Settlement Complete! ✓"
+                : "Settlement in Progress..."}
             </h1>
+            {(settlement as any).name && (
+              <p className="text-2xl font-semibold text-foreground mb-2">
+                {(settlement as any).name}
+              </p>
+            )}
             <p className="text-xl text-muted-foreground">
-              All recipients have been paid. Details below.
+              {isComplete
+                ? "All recipients have been paid. Details below."
+                : `${completedOrders.length} of ${orders.length} payments completed.`}
             </p>
           </motion.div>
 
@@ -363,11 +382,35 @@ export default function Proof() {
                 Export & Share
               </h3>
               <div className="flex flex-wrap justify-center gap-4">
-                <Button variant="outline" className="gap-2">
+                <Button
+                  variant="outline"
+                  className="gap-2"
+                  onClick={() => {
+                    const API_BASE =
+                      import.meta.env.VITE_API_BASE_URL ||
+                      "http://localhost:5000";
+                    window.open(
+                      `${API_BASE}/api/settlements/${settlementId}/export?format=csv`,
+                      "_blank"
+                    );
+                  }}
+                >
                   <Download className="w-4 h-4" />
                   Download CSV
                 </Button>
-                <Button variant="outline" className="gap-2">
+                <Button
+                  variant="outline"
+                  className="gap-2"
+                  onClick={() => {
+                    const API_BASE =
+                      import.meta.env.VITE_API_BASE_URL ||
+                      "http://localhost:5000";
+                    window.open(
+                      `${API_BASE}/api/settlements/${settlementId}/export?format=json`,
+                      "_blank"
+                    );
+                  }}
+                >
                   <Download className="w-4 h-4" />
                   Download JSON
                 </Button>
@@ -402,40 +445,81 @@ export default function Proof() {
               <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                 <div>
                   <span className="text-muted-foreground">Settlement ID:</span>
-                  <span className="ml-2 font-mono">{batchId}</span>
+                  <span className="ml-2 font-mono break-all">
+                    {settlementId}
+                  </span>
+                </div>
+                {(settlement as any).name && (
+                  <div>
+                    <span className="text-muted-foreground">Name:</span>
+                    <span className="ml-2 font-semibold">
+                      {(settlement as any).name}
+                    </span>
+                  </div>
+                )}
+                <div>
+                  <span className="text-muted-foreground">Status:</span>
+                  <span
+                    className={`ml-2 capitalize font-semibold ${
+                      isComplete ? "text-green-500" : "text-yellow-500"
+                    }`}
+                  >
+                    {settlement.status}
+                  </span>
                 </div>
                 <div>
                   <span className="text-muted-foreground">Created:</span>
-                  <span className="ml-2">2 hours ago</span>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Completed:</span>
-                  <span className="ml-2">1 hour ago</span>
+                  <span className="ml-2">
+                    {(settlement as any).createdAt
+                      ? new Date((settlement as any).createdAt).toLocaleString()
+                      : "Unknown"}
+                  </span>
                 </div>
                 <div>
                   <span className="text-muted-foreground">
                     Total Obligations:
                   </span>
-                  <span className="ml-2 font-bold">17</span>
+                  <span className="ml-2 font-bold">{totalObligations}</span>
                 </div>
                 <div>
                   <span className="text-muted-foreground">
                     Optimized Payments:
                   </span>
-                  <span className="ml-2 font-bold">4</span>
+                  <span className="ml-2 font-bold">{netPayments}</span>
                 </div>
                 <div>
                   <span className="text-muted-foreground">Reduction:</span>
-                  <span className="ml-2 text-success font-bold">76%</span>
+                  <span className="ml-2 text-success font-bold">
+                    {reductionPercent}%
+                  </span>
                 </div>
-                <div>
-                  <span className="text-muted-foreground">Total Fees:</span>
-                  <span className="ml-2">$24</span>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Net Savings:</span>
-                  <span className="ml-2 text-success font-bold">$6,400</span>
-                </div>
+                {settlement.nettingResult?.savings && (
+                  <>
+                    <div>
+                      <span className="text-muted-foreground">Time Saved:</span>
+                      <span className="ml-2 font-bold">
+                        {settlement.nettingResult.savings.timeSaved}
+                      </span>
+                    </div>
+                  </>
+                )}
+                {(settlement as any).tags?.length > 0 && (
+                  <div className="md:col-span-2">
+                    <span className="text-muted-foreground">Tags:</span>
+                    <span className="ml-2">
+                      {(settlement as any).tags.map(
+                        (tag: string, i: number) => (
+                          <span
+                            key={i}
+                            className="inline-block px-2 py-0.5 rounded bg-primary/20 text-primary text-xs mr-1"
+                          >
+                            {tag}
+                          </span>
+                        )
+                      )}
+                    </span>
+                  </div>
+                )}
               </div>
             </details>
           </motion.section>

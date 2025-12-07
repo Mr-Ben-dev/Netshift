@@ -7,6 +7,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
 import {
@@ -14,7 +15,9 @@ import {
   useExecuteSettlement,
   useSettlement,
   useSettlementStatus,
+  useUpdateSettlementMeta,
 } from "@/hooks/useApi";
+import { quickValidateAddress } from "@/utils/addressValidation";
 import { getDisplayName } from "@/utils/symbolNormalization";
 import { motion } from "framer-motion";
 import {
@@ -22,15 +25,27 @@ import {
   CheckCircle2,
   ChevronRight,
   Clock,
+  Edit2,
   Info,
   Loader2,
+  Plus,
   RefreshCcw,
+  Tag,
   TrendingUp,
+  X,
+  XCircle,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+
+// Pre-execution validation - checks all recipients have valid addresses
+interface ValidationError {
+  recipient: string;
+  field: string;
+  reason: string;
+}
 
 export default function Settlement() {
   const { batchId } = useParams();
@@ -50,12 +65,64 @@ export default function Settlement() {
   );
   const computeNetting = useComputeNetting();
   const executeSettlement = useExecuteSettlement();
+  const updateMeta = useUpdateSettlementMeta();
   const [activeTab, setActiveTab] = useState("overview");
   const [refreshingPrices, setRefreshingPrices] = useState(false);
   const [pairWarnings, setPairWarnings] = useState<string[]>([]);
   const [validatedSettlementId, setValidatedSettlementId] = useState<
     string | null
   >(null);
+  const [executionErrors, setExecutionErrors] = useState<ValidationError[]>([]);
+
+  // Settlement metadata editing
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [newTag, setNewTag] = useState("");
+  const [isAddingTag, setIsAddingTag] = useState(false);
+
+  // Pre-flight validation for execution
+  const preFlightValidation = useMemo(() => {
+    if (!settlement?.nettingResult?.netPayments) {
+      return { isValid: false, errors: [] as ValidationError[] };
+    }
+
+    const errors: ValidationError[] = [];
+
+    for (const payment of settlement.nettingResult.netPayments) {
+      // Check for missing address
+      if (!payment.receiveAddress || payment.receiveAddress.trim() === "") {
+        errors.push({
+          recipient: payment.recipient,
+          field: "receiveAddress",
+          reason: `Missing receive address for ${
+            payment.recipient
+          }. Please go back to Import and add a ${
+            payment.receiveChain || "wallet"
+          } address.`,
+        });
+        continue;
+      }
+
+      // Validate address format
+      if (payment.receiveChain) {
+        const validation = quickValidateAddress(
+          payment.receiveAddress,
+          payment.receiveChain
+        );
+        if (validation && !validation.valid) {
+          errors.push({
+            recipient: payment.recipient,
+            field: "receiveAddress",
+            reason:
+              validation.hint ||
+              `Invalid ${payment.receiveChain} address for ${payment.recipient}`,
+          });
+        }
+      }
+    }
+
+    return { isValid: errors.length === 0, errors };
+  }, [settlement?.nettingResult?.netPayments]);
 
   useEffect(() => {
     if (settlement?.status === "draft" && !computeNetting.isPending) {
@@ -113,11 +180,25 @@ export default function Settlement() {
   };
 
   const handleExecute = async () => {
+    // Pre-flight validation check
+    if (!preFlightValidation.isValid) {
+      setExecutionErrors(preFlightValidation.errors);
+      toast({
+        title: "Cannot Execute Settlement",
+        description: `${preFlightValidation.errors.length} recipient(s) have missing or invalid addresses. Please fix them first.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setExecutionErrors([]);
+
     try {
       await executeSettlement.mutateAsync(settlementId);
       toast({
         title: "Settlement Executing",
-        description: "SideShift orders created. Redirecting to proof page...",
+        description:
+          "SideShift orders created successfully! Redirecting to track progress...",
       });
       refetch();
       // Redirect to Proof page after successful execution
@@ -125,13 +206,63 @@ export default function Settlement() {
         navigate(`/proof/${settlementId}`);
       }, 1500);
     } catch (error: any) {
+      const errorCode = error?.response?.data?.code;
+      const errorDetails = error?.response?.data?.details;
       const failures = error?.response?.data?.failures;
+
+      // Handle specific error codes
+      if (errorCode === "MISSING_OR_INVALID_ADDRESS" && errorDetails) {
+        setExecutionErrors(errorDetails);
+        toast({
+          title: "Address Validation Failed",
+          description: `${errorDetails.length} recipient(s) have invalid or missing addresses. Please fix them before executing.`,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (errorCode === "ALREADY_EXECUTING") {
+        toast({
+          title: "Already Executing",
+          description:
+            "This settlement is already being executed. Check the Orders tab for status.",
+          variant: "default",
+        });
+        setActiveTab("orders");
+        refetch();
+        return;
+      }
+
+      if (errorCode === "ALREADY_COMPLETED") {
+        toast({
+          title: "Already Completed",
+          description:
+            "This settlement has already been completed successfully!",
+          variant: "default",
+        });
+        navigate(`/proof/${settlementId}`);
+        return;
+      }
+
+      if (errorCode === "REGION_BLOCKED") {
+        toast({
+          title: "Region Not Supported",
+          description:
+            "SideShift.ai is not available in your region due to regulatory restrictions.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Handle order creation failures
       const errorMessage =
         failures && failures.length > 0
           ? `Order creation failed:\n${failures
               .map((f: any) => `• ${f.recipient}: ${f.error}`)
               .join("\n")}`
-          : error.message || "Failed to execute settlement";
+          : error?.response?.data?.message ||
+            error.message ||
+            "Failed to execute settlement";
 
       toast({
         title: "Execution Failed",
@@ -195,11 +326,162 @@ export default function Settlement() {
             className="mb-8"
           >
             <div className="flex flex-wrap items-start justify-between gap-4 mb-4">
-              <div>
-                <h1 className="text-4xl font-bold mb-2">Settlement Details</h1>
-                <p className="text-muted-foreground font-mono text-sm break-all">
+              <div className="flex-1">
+                {/* Editable Name */}
+                <div className="flex items-center gap-2 mb-2">
+                  {isEditingName ? (
+                    <div className="flex items-center gap-2">
+                      <Input
+                        value={editName}
+                        onChange={(e) => setEditName(e.target.value)}
+                        placeholder="Settlement name..."
+                        className="text-2xl font-bold h-auto py-1 max-w-md"
+                        autoFocus
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            updateMeta.mutate(
+                              { settlementId, updates: { name: editName } },
+                              {
+                                onSuccess: () => {
+                                  setIsEditingName(false);
+                                  toast({ title: "Name updated" });
+                                  refetch();
+                                },
+                              }
+                            );
+                          } else if (e.key === "Escape") {
+                            setIsEditingName(false);
+                          }
+                        }}
+                      />
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          updateMeta.mutate(
+                            { settlementId, updates: { name: editName } },
+                            {
+                              onSuccess: () => {
+                                setIsEditingName(false);
+                                toast({ title: "Name updated" });
+                                refetch();
+                              },
+                            }
+                          );
+                        }}
+                        disabled={updateMeta.isPending}
+                      >
+                        {updateMeta.isPending ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          "Save"
+                        )}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setIsEditingName(false)}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  ) : (
+                    <>
+                      <h1 className="text-4xl font-bold">
+                        {(settlement as any).name || "Settlement Details"}
+                      </h1>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-8 w-8"
+                        onClick={() => {
+                          setEditName((settlement as any).name || "");
+                          setIsEditingName(true);
+                        }}
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </Button>
+                    </>
+                  )}
+                </div>
+                <p className="text-muted-foreground font-mono text-sm break-all mb-3">
                   {settlementId}
                 </p>
+
+                {/* Tags Section */}
+                <div className="flex flex-wrap items-center gap-2">
+                  <Tag className="w-4 h-4 text-muted-foreground" />
+                  {((settlement as any).tags || []).map(
+                    (tag: string, idx: number) => (
+                      <Badge
+                        key={idx}
+                        variant="secondary"
+                        className="flex items-center gap-1 cursor-pointer hover:bg-destructive/20"
+                        onClick={() => {
+                          const newTags = (
+                            (settlement as any).tags || []
+                          ).filter((t: string) => t !== tag);
+                          updateMeta.mutate(
+                            { settlementId, updates: { tags: newTags } },
+                            {
+                              onSuccess: () => {
+                                toast({ title: "Tag removed" });
+                                refetch();
+                              },
+                            }
+                          );
+                        }}
+                      >
+                        {tag}
+                        <X className="w-3 h-3" />
+                      </Badge>
+                    )
+                  )}
+                  {isAddingTag ? (
+                    <div className="flex items-center gap-1">
+                      <Input
+                        value={newTag}
+                        onChange={(e) => setNewTag(e.target.value)}
+                        placeholder="Tag..."
+                        className="h-7 w-24 text-sm"
+                        autoFocus
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && newTag.trim()) {
+                            const currentTags = (settlement as any).tags || [];
+                            updateMeta.mutate(
+                              {
+                                settlementId,
+                                updates: {
+                                  tags: [...currentTags, newTag.trim()],
+                                },
+                              },
+                              {
+                                onSuccess: () => {
+                                  setNewTag("");
+                                  setIsAddingTag(false);
+                                  toast({ title: "Tag added" });
+                                  refetch();
+                                },
+                              }
+                            );
+                          } else if (e.key === "Escape") {
+                            setIsAddingTag(false);
+                            setNewTag("");
+                          }
+                        }}
+                      />
+                    </div>
+                  ) : (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-6 px-2 text-xs"
+                      onClick={() => setIsAddingTag(true)}
+                    >
+                      <Plus className="w-3 h-3 mr-1" />
+                      Add Tag
+                    </Button>
+                  )}
+                </div>
               </div>
               <div className="flex items-center gap-3">
                 <Badge>{settlement.status}</Badge>
@@ -475,6 +757,55 @@ export default function Settlement() {
                         </Alert>
                       )}
 
+                      {/* Pre-flight Address Validation Errors */}
+                      {(!preFlightValidation.isValid ||
+                        executionErrors.length > 0) && (
+                        <Alert className="border-red-500/50 bg-red-500/10 w-full">
+                          <XCircle className="h-4 w-4 text-red-500" />
+                          <AlertTitle className="text-red-300">
+                            Missing or Invalid Addresses
+                          </AlertTitle>
+                          <AlertDescription className="text-red-200">
+                            <p className="mb-2">
+                              The following recipients need valid wallet
+                              addresses before you can execute:
+                            </p>
+                            <ul className="list-disc list-inside space-y-1 text-sm">
+                              {(executionErrors.length > 0
+                                ? executionErrors
+                                : preFlightValidation.errors
+                              ).map((err, i) => (
+                                <li key={i}>
+                                  <strong>{err.recipient}</strong>: {err.reason}
+                                </li>
+                              ))}
+                            </ul>
+                            <p className="mt-3 text-sm">
+                              <Link
+                                to="/import"
+                                className="text-red-300 underline hover:text-red-100"
+                              >
+                                Go back to Import
+                              </Link>{" "}
+                              to add or fix the recipient addresses.
+                            </p>
+                          </AlertDescription>
+                        </Alert>
+                      )}
+
+                      {/* Validation Success Indicator */}
+                      {preFlightValidation.isValid &&
+                        executionErrors.length === 0 && (
+                          <Alert className="border-green-500/50 bg-green-500/10 w-full">
+                            <CheckCircle2 className="h-4 w-4 text-green-500" />
+                            <AlertDescription className="text-green-200">
+                              <strong>Ready to execute:</strong> All{" "}
+                              {netPayments.length} recipient addresses validated
+                              successfully.
+                            </AlertDescription>
+                          </Alert>
+                        )}
+
                       <Button
                         variant="outline"
                         size="sm"
@@ -492,15 +823,22 @@ export default function Settlement() {
                       {settlement.status === "ready" && (
                         <Button
                           size="lg"
-                          className="gradient-bg-primary"
+                          className={
+                            preFlightValidation.isValid
+                              ? "gradient-bg-primary"
+                              : "bg-gray-600 cursor-not-allowed"
+                          }
                           onClick={handleExecute}
                           disabled={
                             executeSettlement.isPending ||
-                            pairWarnings.length > 0
+                            pairWarnings.length > 0 ||
+                            !preFlightValidation.isValid
                           }
                         >
                           {executeSettlement.isPending
                             ? "Creating..."
+                            : !preFlightValidation.isValid
+                            ? "Fix Addresses to Execute"
                             : "Execute Settlement"}
                         </Button>
                       )}

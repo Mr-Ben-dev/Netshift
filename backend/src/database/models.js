@@ -101,6 +101,10 @@ const SettlementSchema = new Schema({
     enum: ['draft', 'computing', 'ready', 'executing', 'completed', 'failed'],
     default: 'draft'
   },
+  // User-provided metadata for organization
+  name: { type: String, default: '' },
+  tags: [{ type: String }],
+  groupId: { type: String, default: '' }, // For grouping related settlements
   obligations: [ObligationSchema],
   recipientPreferences: [RecipientPreferenceSchema],
   nettingResult: { 

@@ -23,12 +23,16 @@ import { motion } from "framer-motion";
 import {
   Activity,
   ArrowDownRight,
+  BarChart3,
   CheckCircle2,
   Clock,
+  Coins,
   DollarSign,
   Loader2,
+  Network,
+  RefreshCcw,
   TrendingDown,
-  TrendingUp,
+  Zap,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
@@ -44,26 +48,71 @@ interface SettlementSummary {
   totalVolume: string;
 }
 
+interface AnalyticsData {
+  summary: {
+    totalSettlements: number;
+    totalObligations: number;
+    totalOptimizedPayments: number;
+    totalPaymentsEliminated: number;
+    paymentReductionRate: string;
+    totalFeeSavings: string;
+    totalVolumeUsd: string;
+  };
+  statusBreakdown: {
+    draft: number;
+    computing: number;
+    ready: number;
+    executing: number;
+    completed: number;
+    failed: number;
+  };
+  orders: {
+    total: number;
+    completed: number;
+    failed: number;
+    successRate: string;
+  };
+  popularity: {
+    tokens: { token: string; count: number }[];
+    chains: { chain: string; count: number }[];
+    pairs: { pair: string; count: number }[];
+  };
+  timeSeries: {
+    date: string;
+    settlements: number;
+    obligations: number;
+    volume: number;
+  }[];
+}
+
 export default function AnalyticsDashboard() {
   const { isHealthy } = useBackendHealth();
   const [settlements, setSettlements] = useState<SettlementSummary[]>([]);
+  const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
   useEffect(() => {
-    // Fetch settlements from backend
-    fetchSettlements();
+    fetchData();
   }, []);
 
-  const fetchSettlements = async () => {
+  const fetchData = async () => {
     try {
       setLoading(true);
-      const API_BASE =
-        import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
-      const response = await fetch(`${API_BASE}/api/settlements?limit=50`);
-      const json = await response.json();
 
-      if (json.success && json.data) {
-        const mapped = json.data.map((s: any) => ({
+      // Fetch both endpoints in parallel
+      const [settlementsRes, analyticsRes] = await Promise.all([
+        fetch(`${API_BASE}/api/settlements?limit=50`),
+        fetch(`${API_BASE}/api/analytics`),
+      ]);
+
+      const settlementsJson = await settlementsRes.json();
+      const analyticsJson = await analyticsRes.json();
+
+      if (settlementsJson.success && settlementsJson.data) {
+        const mapped = settlementsJson.data.map((s: any) => ({
           id: s.settlementId,
           status: s.status,
           createdAt: s.createdAt,
@@ -93,36 +142,56 @@ export default function AnalyticsDashboard() {
         }));
         setSettlements(mapped);
       }
+
+      if (analyticsJson.success && analyticsJson.data) {
+        setAnalytics(analyticsJson.data);
+      }
+
       setLoading(false);
     } catch (error) {
-      console.error("Failed to fetch settlements:", error);
+      console.error("Failed to fetch data:", error);
       setLoading(false);
     }
   };
 
-  // Calculate totals
-  const totalSettlements = settlements.length;
-  const totalParties = settlements.reduce((sum, s) => sum + s.parties, 0);
-  const totalOriginalPayments = settlements.reduce(
-    (sum, s) => sum + s.originalPayments,
-    0
-  );
-  const totalOptimizedPayments = settlements.reduce(
-    (sum, s) => sum + s.optimizedPayments,
-    0
-  );
-  const avgReduction =
-    settlements.length > 0
-      ? settlements.reduce((sum, s) => sum + s.reductionPercent, 0) /
-        settlements.length
-      : 0;
-  const totalVolume = settlements.reduce((sum, s) => {
-    const volume = parseFloat(s.totalVolume.replace(/[$,]/g, ""));
-    return sum + volume;
-  }, 0);
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await fetchData();
+    setRefreshing(false);
+  };
 
-  const gasSavings = (totalOriginalPayments - totalOptimizedPayments) * 0.5; // Estimate $0.50 per tx
-  const timeSaved = (totalOriginalPayments - totalOptimizedPayments) * 2; // Estimate 2 min per tx
+  // Calculate totals (fallback to settlement-based calcs if analytics API not available)
+  const totalSettlements =
+    analytics?.summary.totalSettlements || settlements.length;
+  const totalParties = settlements.reduce((sum, s) => sum + s.parties, 0);
+  const totalOriginalPayments =
+    analytics?.summary.totalObligations ||
+    settlements.reduce((sum, s) => sum + s.originalPayments, 0);
+  const totalOptimizedPayments =
+    analytics?.summary.totalOptimizedPayments ||
+    settlements.reduce((sum, s) => sum + s.optimizedPayments, 0);
+  const avgReduction =
+    analytics?.summary.paymentReductionRate ||
+    (settlements.length > 0
+      ? `${(
+          settlements.reduce((sum, s) => sum + s.reductionPercent, 0) /
+          settlements.length
+        ).toFixed(1)}%`
+      : "0%");
+  const totalVolume =
+    analytics?.summary.totalVolumeUsd ||
+    settlements.reduce((sum, s) => {
+      const volume = parseFloat(s.totalVolume.replace(/[$,]/g, ""));
+      return sum + volume;
+    }, 0);
+
+  const totalPaymentsEliminated =
+    analytics?.summary.totalPaymentsEliminated ||
+    totalOriginalPayments - totalOptimizedPayments;
+  const gasSavings =
+    analytics?.summary.totalFeeSavings ||
+    ((totalOriginalPayments - totalOptimizedPayments) * 0.5).toFixed(2);
+  const timeSaved = totalPaymentsEliminated * 2; // Estimate 2 min per tx
 
   if (loading) {
     return (
@@ -150,10 +219,25 @@ export default function AnalyticsDashboard() {
                   Real-time settlement metrics and optimization insights
                 </p>
               </div>
-              <Badge variant={isHealthy ? "default" : "destructive"}>
-                <Activity className="w-3 h-3 mr-1" />
-                {isHealthy ? "Live" : "Offline"}
-              </Badge>
+              <div className="flex items-center gap-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleRefresh}
+                  disabled={refreshing}
+                >
+                  <RefreshCcw
+                    className={`w-4 h-4 mr-2 ${
+                      refreshing ? "animate-spin" : ""
+                    }`}
+                  />
+                  Refresh
+                </Button>
+                <Badge variant={isHealthy ? "default" : "destructive"}>
+                  <Activity className="w-3 h-3 mr-1" />
+                  {isHealthy ? "Live" : "Offline"}
+                </Badge>
+              </div>
             </div>
           </motion.div>
 
@@ -174,7 +258,7 @@ export default function AnalyticsDashboard() {
               <CardContent>
                 <div className="text-3xl font-bold">{totalSettlements}</div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  {totalParties} total parties
+                  {totalOriginalPayments} obligations processed
                 </p>
               </CardContent>
             </Card>
@@ -188,10 +272,10 @@ export default function AnalyticsDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold text-green-500">
-                  {avgReduction.toFixed(1)}%
+                  {avgReduction}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  {totalOriginalPayments} → {totalOptimizedPayments} payments
+                  {totalPaymentsEliminated} payments eliminated
                 </p>
               </CardContent>
             </Card>
@@ -200,15 +284,13 @@ export default function AnalyticsDashboard() {
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                   <DollarSign className="w-4 h-4" />
-                  Total Volume
+                  Fees Saved
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold">
-                  ${totalVolume.toLocaleString()}
-                </div>
+                <div className="text-3xl font-bold">${gasSavings}</div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Gas saved: ${gasSavings.toFixed(2)}
+                  {analytics?.orders.successRate || "0%"} order success rate
                 </p>
               </CardContent>
             </Card>
@@ -238,9 +320,8 @@ export default function AnalyticsDashboard() {
             <Tabs defaultValue="recent" className="space-y-4">
               <TabsList>
                 <TabsTrigger value="recent">Recent Settlements</TabsTrigger>
-                <TabsTrigger value="optimization">
-                  Optimization Stats
-                </TabsTrigger>
+                <TabsTrigger value="popularity">Popular Assets</TabsTrigger>
+                <TabsTrigger value="optimization">Status Breakdown</TabsTrigger>
               </TabsList>
 
               <TabsContent value="recent">
@@ -252,164 +333,368 @@ export default function AnalyticsDashboard() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-4">
-                      {settlements.map((settlement) => (
-                        <Link
-                          key={settlement.id}
-                          to={`/settlement/${settlement.id}`}
-                          className="block"
-                        >
-                          <div className="p-4 rounded-lg border hover:border-primary/50 transition-all cursor-pointer">
-                            <div className="flex items-start justify-between mb-3">
-                              <div>
-                                <div className="font-mono text-sm text-muted-foreground">
-                                  {settlement.id}
+                    {settlements.length === 0 ? (
+                      <div className="text-center py-12 text-muted-foreground">
+                        <BarChart3 className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                        <p className="text-lg font-medium mb-2">
+                          No settlements yet
+                        </p>
+                        <p className="text-sm">
+                          Create your first settlement to see analytics here.
+                        </p>
+                        <Button asChild className="mt-4">
+                          <Link to="/import">Create Settlement</Link>
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {settlements.map((settlement) => (
+                          <Link
+                            key={settlement.id}
+                            to={`/settlement/${settlement.id}`}
+                            className="block"
+                          >
+                            <div className="p-4 rounded-lg border hover:border-primary/50 transition-all cursor-pointer">
+                              <div className="flex items-start justify-between mb-3">
+                                <div>
+                                  <div className="font-mono text-sm text-muted-foreground">
+                                    {settlement.id}
+                                  </div>
+                                  <div className="text-xs text-muted-foreground mt-1">
+                                    {new Date(
+                                      settlement.createdAt
+                                    ).toLocaleString()}
+                                  </div>
                                 </div>
-                                <div className="text-xs text-muted-foreground mt-1">
-                                  {new Date(
-                                    settlement.createdAt
-                                  ).toLocaleString()}
+                                <Badge
+                                  variant={
+                                    settlement.status === "completed"
+                                      ? "default"
+                                      : settlement.status === "executing"
+                                      ? "secondary"
+                                      : "outline"
+                                  }
+                                >
+                                  {settlement.status}
+                                </Badge>
+                              </div>
+
+                              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-3">
+                                <div>
+                                  <div className="text-xs text-muted-foreground">
+                                    Parties
+                                  </div>
+                                  <div className="font-semibold">
+                                    {settlement.parties}
+                                  </div>
+                                </div>
+                                <div>
+                                  <div className="text-xs text-muted-foreground">
+                                    Volume
+                                  </div>
+                                  <div className="font-semibold">
+                                    {settlement.totalVolume}
+                                  </div>
+                                </div>
+                                <div>
+                                  <div className="text-xs text-muted-foreground">
+                                    Payments
+                                  </div>
+                                  <div className="font-semibold">
+                                    {settlement.originalPayments} →{" "}
+                                    {settlement.optimizedPayments}
+                                  </div>
+                                </div>
+                                <div>
+                                  <div className="text-xs text-muted-foreground">
+                                    Reduction
+                                  </div>
+                                  <div className="font-semibold text-green-500 flex items-center gap-1">
+                                    <ArrowDownRight className="w-3 h-3" />
+                                    {settlement.reductionPercent.toFixed(1)}%
+                                  </div>
                                 </div>
                               </div>
-                              <Badge
-                                variant={
-                                  settlement.status === "completed"
-                                    ? "default"
-                                    : settlement.status === "executing"
-                                    ? "secondary"
-                                    : "outline"
-                                }
-                              >
-                                {settlement.status}
-                              </Badge>
+
+                              <Progress
+                                value={settlement.reductionPercent}
+                                className="h-2"
+                              />
                             </div>
-
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-3">
-                              <div>
-                                <div className="text-xs text-muted-foreground">
-                                  Parties
-                                </div>
-                                <div className="font-semibold">
-                                  {settlement.parties}
-                                </div>
-                              </div>
-                              <div>
-                                <div className="text-xs text-muted-foreground">
-                                  Volume
-                                </div>
-                                <div className="font-semibold">
-                                  {settlement.totalVolume}
-                                </div>
-                              </div>
-                              <div>
-                                <div className="text-xs text-muted-foreground">
-                                  Payments
-                                </div>
-                                <div className="font-semibold">
-                                  {settlement.originalPayments} →{" "}
-                                  {settlement.optimizedPayments}
-                                </div>
-                              </div>
-                              <div>
-                                <div className="text-xs text-muted-foreground">
-                                  Reduction
-                                </div>
-                                <div className="font-semibold text-green-500 flex items-center gap-1">
-                                  <ArrowDownRight className="w-3 h-3" />
-                                  {settlement.reductionPercent.toFixed(1)}%
-                                </div>
-                              </div>
-                            </div>
-
-                            <Progress
-                              value={settlement.reductionPercent}
-                              className="h-2"
-                            />
-                          </div>
-                        </Link>
-                      ))}
-
-                      {settlements.length === 0 && (
-                        <div className="text-center py-12">
-                          <p className="text-muted-foreground mb-4">
-                            No settlements yet
-                          </p>
-                          <Button asChild>
-                            <Link to="/import">Create Settlement</Link>
-                          </Button>
-                        </div>
-                      )}
-                    </div>
+                          </Link>
+                        ))}
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
+              </TabsContent>
+
+              {/* Popularity Tab */}
+              <TabsContent value="popularity">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Coins className="w-5 h-5" />
+                        Top Tokens
+                      </CardTitle>
+                      <CardDescription>
+                        Most used tokens in obligations
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      {analytics?.popularity.tokens &&
+                      analytics.popularity.tokens.length > 0 ? (
+                        <div className="space-y-3">
+                          {analytics.popularity.tokens.map((item, i) => (
+                            <div
+                              key={item.token}
+                              className="flex items-center justify-between"
+                            >
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm text-muted-foreground">
+                                  {i + 1}.
+                                </span>
+                                <span className="font-semibold">
+                                  {item.token}
+                                </span>
+                              </div>
+                              <Badge variant="secondary">{item.count}</Badge>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-muted-foreground text-sm">
+                          No data yet
+                        </p>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Network className="w-5 h-5" />
+                        Top Chains
+                      </CardTitle>
+                      <CardDescription>
+                        Most used blockchain networks
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      {analytics?.popularity.chains &&
+                      analytics.popularity.chains.length > 0 ? (
+                        <div className="space-y-3">
+                          {analytics.popularity.chains.map((item, i) => (
+                            <div
+                              key={item.chain}
+                              className="flex items-center justify-between"
+                            >
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm text-muted-foreground">
+                                  {i + 1}.
+                                </span>
+                                <span className="font-semibold capitalize">
+                                  {item.chain}
+                                </span>
+                              </div>
+                              <Badge variant="secondary">{item.count}</Badge>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-muted-foreground text-sm">
+                          No data yet
+                        </p>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Zap className="w-5 h-5" />
+                        Top Trading Pairs
+                      </CardTitle>
+                      <CardDescription>
+                        Most popular swap routes
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      {analytics?.popularity.pairs &&
+                      analytics.popularity.pairs.length > 0 ? (
+                        <div className="space-y-3">
+                          {analytics.popularity.pairs
+                            .slice(0, 5)
+                            .map((item, i) => (
+                              <div
+                                key={item.pair}
+                                className="flex items-center justify-between"
+                              >
+                                <div className="flex items-center gap-2">
+                                  <span className="text-sm text-muted-foreground">
+                                    {i + 1}.
+                                  </span>
+                                  <span className="font-semibold text-xs">
+                                    {item.pair}
+                                  </span>
+                                </div>
+                                <Badge variant="secondary">{item.count}</Badge>
+                              </div>
+                            ))}
+                        </div>
+                      ) : (
+                        <p className="text-muted-foreground text-sm">
+                          No data yet
+                        </p>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
               </TabsContent>
 
               <TabsContent value="optimization">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <Card>
                     <CardHeader>
-                      <CardTitle>Netting Efficiency</CardTitle>
+                      <CardTitle>Settlement Status</CardTitle>
+                      <CardDescription>
+                        Current status of all settlements
+                      </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                      <div>
-                        <div className="flex justify-between mb-2">
-                          <span className="text-sm">Average Reduction</span>
-                          <span className="font-semibold text-green-500">
-                            {avgReduction.toFixed(1)}%
-                          </span>
-                        </div>
-                        <Progress value={avgReduction} className="h-2" />
-                      </div>
-                      <div>
-                        <div className="flex justify-between mb-2">
-                          <span className="text-sm">Best Reduction</span>
-                          <span className="font-semibold">
-                            {Math.max(
-                              ...settlements.map((s) => s.reductionPercent)
-                            ).toFixed(1)}
-                            %
-                          </span>
-                        </div>
-                      </div>
-                      <div>
-                        <div className="flex justify-between mb-2">
-                          <span className="text-sm">Payments Eliminated</span>
-                          <span className="font-semibold">
-                            {totalOriginalPayments - totalOptimizedPayments}
-                          </span>
-                        </div>
-                      </div>
+                      {analytics?.statusBreakdown && (
+                        <>
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm flex items-center gap-2">
+                              <span className="w-3 h-3 rounded-full bg-green-500" />
+                              Completed
+                            </span>
+                            <span className="font-semibold">
+                              {analytics.statusBreakdown.completed}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm flex items-center gap-2">
+                              <span className="w-3 h-3 rounded-full bg-blue-500" />
+                              Executing
+                            </span>
+                            <span className="font-semibold">
+                              {analytics.statusBreakdown.executing}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm flex items-center gap-2">
+                              <span className="w-3 h-3 rounded-full bg-yellow-500" />
+                              Ready
+                            </span>
+                            <span className="font-semibold">
+                              {analytics.statusBreakdown.ready}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm flex items-center gap-2">
+                              <span className="w-3 h-3 rounded-full bg-gray-500" />
+                              Draft
+                            </span>
+                            <span className="font-semibold">
+                              {analytics.statusBreakdown.draft}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm flex items-center gap-2">
+                              <span className="w-3 h-3 rounded-full bg-red-500" />
+                              Failed
+                            </span>
+                            <span className="font-semibold">
+                              {analytics.statusBreakdown.failed}
+                            </span>
+                          </div>
+                        </>
+                      )}
                     </CardContent>
                   </Card>
 
                   <Card>
                     <CardHeader>
-                      <CardTitle>Cost Savings</CardTitle>
+                      <CardTitle>SideShift Orders</CardTitle>
+                      <CardDescription>
+                        Order execution statistics
+                      </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm">Gas Fees Saved</span>
-                        <span className="font-semibold text-green-500 flex items-center gap-1">
-                          <TrendingUp className="w-4 h-4" />$
-                          {gasSavings.toFixed(2)}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm">Time Saved</span>
-                        <span className="font-semibold">
-                          {timeSaved} minutes
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm">Efficiency Gain</span>
-                        <span className="font-semibold">
-                          {(
-                            ((totalOriginalPayments - totalOptimizedPayments) /
-                              totalOriginalPayments) *
-                            100
-                          ).toFixed(1)}
-                          %
-                        </span>
+                      {analytics?.orders && (
+                        <>
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm">Total Orders</span>
+                            <span className="font-semibold">
+                              {analytics.orders.total}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm">Completed</span>
+                            <span className="font-semibold text-green-500">
+                              {analytics.orders.completed}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm">Failed</span>
+                            <span className="font-semibold text-red-500">
+                              {analytics.orders.failed}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm">Success Rate</span>
+                            <span className="font-semibold text-green-500">
+                              {analytics.orders.successRate}
+                            </span>
+                          </div>
+                        </>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  <Card className="md:col-span-2">
+                    <CardHeader>
+                      <CardTitle>Netting Efficiency</CardTitle>
+                      <CardDescription>
+                        Payment optimization metrics
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                        <div className="text-center">
+                          <div className="text-3xl font-bold text-green-500">
+                            {avgReduction}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            Payment Reduction
+                          </div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-3xl font-bold">
+                            {totalPaymentsEliminated}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            Payments Eliminated
+                          </div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-3xl font-bold text-green-500">
+                            ${gasSavings}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            Fees Saved
+                          </div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-3xl font-bold">
+                            {timeSaved} min
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            Time Saved
+                          </div>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>

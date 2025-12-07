@@ -10,10 +10,12 @@ import {
   computeNetting,
   createSettlement,
   executeSettlement,
+  getAnalytics,
   getCoins,
   getDepositInstructions,
   getSettlement,
   getSettlementStatus,
+  updateSettlementMeta,
   validateAddress,
   validatePair,
   type Obligation,
@@ -290,5 +292,39 @@ export const useNetworkComparison = (
       !!params.to &&
       !!params.toNetwork,
     staleTime: 10000, // 10 seconds (rates change frequently)
+  });
+};
+
+/**
+ * Update settlement metadata mutation
+ */
+export const useUpdateSettlementMeta = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      settlementId,
+      updates,
+    }: {
+      settlementId: string;
+      updates: { name?: string; description?: string; tags?: string[] };
+    }) => updateSettlementMeta(settlementId, updates),
+    onSuccess: (_, { settlementId }) => {
+      // Refetch settlement to get updated data
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.settlement(settlementId),
+      });
+    },
+  });
+};
+
+/**
+ * Get analytics data
+ */
+export const useAnalytics = () => {
+  return useQuery({
+    queryKey: ["analytics"],
+    queryFn: getAnalytics,
+    staleTime: 60000, // 1 minute
   });
 };

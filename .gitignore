@@ -48,16 +48,39 @@ lerna-debug.log*
 Thumbs.db
 .DS_Store
 
+# Vite cache
+.vite_cache/
+web/.vite_cache/
+
+# Keep important markdown files
+# (removed *.md ignore - we want docs in repo)
+
+# Test scripts (local only)
+test-api.ps1
+test-create.ps1
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+
+# IDE
+*.swp
+*.swo
+*~
+
+# Vercel
+.vercel/
+
+# Render
+.render/
+
 # Markdown files (except README)
 *.md
 !README.md
 !DOCUMENTATION.md
-# Markdown files (except README)
+# Markdown files (keep only these)
 *.md
 !README.md
 !PROJECT_COMPLETE_SUMMARY.md
 !DOCUMENTATION.md
-
-#test
-test-api.ps1
-test-create.ps1

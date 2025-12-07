@@ -50,7 +50,7 @@ function headers(userIp, withSecret = true) {
  * Retry logic with exponential backoff
  * Retries on 429 (rate limit) and 5xx errors
  */
-async function retry(fn, maxAttempts = 3) {
+async function retry(fn, maxAttempts = 4) {
   let attempt = 0;
   for (;;) {
     try {
@@ -60,7 +60,8 @@ async function retry(fn, maxAttempts = 3) {
       const isRetryable = status === 429 || (status >= 500 && status < 600);
       
       if (isRetryable && attempt < maxAttempts) {
-        const delay = 700 * (2 ** attempt); // 700ms, 1.4s, 2.8s
+        const delay = 1500 * (2 ** attempt); // 1.5s, 3s, 6s, 12s
+        console.log(`[SideShift] Rate limited (${status}), retry ${attempt + 1}/${maxAttempts} in ${delay}ms`);
         await new Promise(r => setTimeout(r, delay));
         attempt++;
       } else {

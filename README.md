@@ -2,11 +2,23 @@
 
 **The only B2B/enterprise-grade, multi-party settlement platform built on SideShift.ai**
 
-[![Live Demo](https://img.shields.io/badge/Demo-Live-success)](https://netshift.xyz)
-[![Wave 2](https://img.shields.io/badge/SideShift-Wave%202-blue)](https://sideshift.ai/buildathon)
+[![Live Demo](https://img.shields.io/badge/Demo-Live-success)](https://netshift.vercel.app)
+[![Wave 3](https://img.shields.io/badge/SideShift-Wave%203-purple)](https://sideshift.ai/buildathon)
 [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 
 > **Reduce crypto payments by 80% using graph-based netting algorithms + SideShift's 200+ asset cross-chain swaps**
+
+---
+
+## 🌐 Live Links
+
+| Resource              | URL                                    |
+| --------------------- | -------------------------------------- |
+| 🌐 **Live App**       | https://netshift.vercel.app            |
+| 🖥️ **Backend API**    | https://netshift.onrender.com          |
+| 📦 **GitHub Repo**    | https://github.com/Mr-Ben-dev/Netshift |
+| 📄 **Wave 3 Summary** | [summary_wave3.md](./summary_wave3.md) |
+| 📄 **Wave 2 Summary** | [summary_wave2.md](./summary_wave2.md) |
 
 ---
 
@@ -280,24 +292,21 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 - **SideShift.ai** - For the incredible cross-chain swap infrastructure
 - **SideShift Buildathon** - For pushing us to build production-grade solutions
-- **Community** - For feedback and support throughout Wave 1
+- **Community** - For feedback and support throughout all waves
 
 ---
 
 ## 📞 Contact
 
-- **Website**: [netshift.xyz](https://netshift.xyz)
-- **Twitter**: [@NetShiftApp](https://twitter.com/NetShiftApp)
-- **Discord**: [Join our server](https://discord.gg/netshift)
-- **Email**: team@netshift.xyz
+- **Website**: [netshift.vercel.app](https://netshift.vercel.app)
+- **GitHub**: [Mr-Ben-dev/Netshift](https://github.com/Mr-Ben-dev/Netshift)
 
 ---
 
 <div align="center">
 
-**Built with ❤️ for the SideShift.ai Buildathon Wave 2**
+**Built with ❤️ for the SideShift.ai Buildathon Wave 3**
 
-[![Star on GitHub](https://img.shields.io/github/stars/yourname/netshift?style=social)](https://github.com/yourname/netshift)
-[![Follow on Twitter](https://img.shields.io/twitter/follow/NetShiftApp?style=social)](https://twitter.com/NetShiftApp)
+[![Star on GitHub](https://img.shields.io/github/stars/Mr-Ben-dev/Netshift?style=social)](https://github.com/Mr-Ben-dev/Netshift)
 
 </div>

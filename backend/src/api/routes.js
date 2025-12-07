@@ -17,14 +17,14 @@ import { recommendDepositToken } from '../netting/optimizer.js';
 import { validateSettleDetails } from '../utils/addressValidation.js';
 import { extractUserIp, settlementCreateSchema } from '../utils/validation.js';
 import {
-  cancelOrder,
-  checkPermissions,
-  createFixedShift,
-  getCoins,
-  getPairs,
-  getShiftStatus,
-  requestFixedQuote,
-  validatePair
+    cancelOrder,
+    checkPermissions,
+    createFixedShift,
+    getCoins,
+    getPairs,
+    getShiftStatus,
+    requestFixedQuote,
+    validatePair
 } from './sideshift.v2.js';
 
 const router = Router();
@@ -322,6 +322,10 @@ router.post('/settlements/create', async (req, res) => {
       status: 'draft',
       obligations: value.obligations,
       recipientPreferences: value.recipientPreferences,
+      // User metadata for organization
+      name: value.name || '',
+      tags: value.tags || [],
+      groupId: value.groupId || '',
       nettingResult: {
         originalCount: 0,
         optimizedCount: 0,
@@ -368,6 +372,175 @@ router.get('/settlements', async (req, res) => {
 });
 
 /**
+ * GET /analytics
+ * Get comprehensive analytics data for the dashboard
+ * Includes: settlement counts, savings totals, popular tokens, recent activity
+ */
+router.get('/analytics', async (req, res) => {
+  try {
+    // Get all settlements for aggregate calculations
+    const allSettlements = await Settlement.find()
+      .select('status createdAt obligations nettingResult sideshiftOrders')
+      .lean();
+    
+    // Basic counts
+    const totalSettlements = allSettlements.length;
+    const statusCounts = {
+      draft: 0,
+      computing: 0,
+      ready: 0,
+      executing: 0,
+      completed: 0,
+      failed: 0
+    };
+    
+    // Aggregate metrics
+    let totalObligations = 0;
+    let totalOptimizedPayments = 0;
+    let totalPaymentsEliminated = 0;
+    let totalFeeSavings = 0;
+    let totalVolumeUsd = 0;
+    
+    // Token/chain popularity
+    const tokenUsage = {};
+    const chainUsage = {};
+    const pairUsage = {};
+    
+    // Orders tracking
+    let totalOrders = 0;
+    let completedOrders = 0;
+    let failedOrders = 0;
+    
+    // Time series data (last 30 days)
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const dailyStats = {};
+    
+    for (const settlement of allSettlements) {
+      // Status counts
+      statusCounts[settlement.status] = (statusCounts[settlement.status] || 0) + 1;
+      
+      // Obligations analysis
+      if (settlement.obligations) {
+        totalObligations += settlement.obligations.length;
+        
+        // Token/chain popularity from obligations
+        for (const obl of settlement.obligations) {
+          const token = (obl.token || 'usdc').toUpperCase();
+          const chain = (obl.chain || 'base').toLowerCase();
+          
+          tokenUsage[token] = (tokenUsage[token] || 0) + 1;
+          chainUsage[chain] = (chainUsage[chain] || 0) + 1;
+          
+          // Estimate volume (assume stablecoins = 1 USD)
+          const isStable = ['usdc', 'usdt', 'dai', 'busd'].includes(token.toLowerCase());
+          totalVolumeUsd += isStable ? obl.amount : (obl.amount * 0); // Only count stables for now
+        }
+      }
+      
+      // Netting analysis
+      if (settlement.nettingResult) {
+        const nr = settlement.nettingResult;
+        totalOptimizedPayments += nr.optimizedCount || 0;
+        totalPaymentsEliminated += (nr.originalCount || 0) - (nr.optimizedCount || 0);
+        
+        if (nr.savings) {
+          totalFeeSavings += nr.savings.estimatedFees || 0;
+        }
+        
+        // Pair usage from net payments
+        if (nr.netPayments) {
+          for (const np of nr.netPayments) {
+            const pairKey = `${np.payToken}-${np.payChain}→${np.receiveToken}-${np.receiveChain}`;
+            pairUsage[pairKey] = (pairUsage[pairKey] || 0) + 1;
+          }
+        }
+      }
+      
+      // SideShift orders analysis
+      if (settlement.sideshiftOrders) {
+        for (const order of settlement.sideshiftOrders) {
+          totalOrders++;
+          if (['settled', 'completed'].includes(order.status)) completedOrders++;
+          if (order.status === 'failed') failedOrders++;
+        }
+      }
+      
+      // Daily stats (last 30 days)
+      if (settlement.createdAt && new Date(settlement.createdAt) >= thirtyDaysAgo) {
+        const dateKey = new Date(settlement.createdAt).toISOString().split('T')[0];
+        if (!dailyStats[dateKey]) {
+          dailyStats[dateKey] = { settlements: 0, obligations: 0, volume: 0 };
+        }
+        dailyStats[dateKey].settlements++;
+        dailyStats[dateKey].obligations += settlement.obligations?.length || 0;
+      }
+    }
+    
+    // Calculate efficiency metrics
+    const paymentReductionRate = totalObligations > 0 
+      ? ((totalPaymentsEliminated / totalObligations) * 100).toFixed(1)
+      : 0;
+    
+    const orderSuccessRate = totalOrders > 0 
+      ? ((completedOrders / totalOrders) * 100).toFixed(1)
+      : 0;
+    
+    // Sort and limit popularity lists
+    const topTokens = Object.entries(tokenUsage)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 10)
+      .map(([token, count]) => ({ token, count }));
+    
+    const topChains = Object.entries(chainUsage)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 10)
+      .map(([chain, count]) => ({ chain, count }));
+    
+    const topPairs = Object.entries(pairUsage)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 10)
+      .map(([pair, count]) => ({ pair, count }));
+    
+    // Convert daily stats to array
+    const dailyData = Object.entries(dailyStats)
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([date, stats]) => ({ date, ...stats }));
+    
+    res.json({
+      success: true,
+      data: {
+        summary: {
+          totalSettlements,
+          totalObligations,
+          totalOptimizedPayments,
+          totalPaymentsEliminated,
+          paymentReductionRate: `${paymentReductionRate}%`,
+          totalFeeSavings: totalFeeSavings.toFixed(2),
+          totalVolumeUsd: totalVolumeUsd.toFixed(2)
+        },
+        statusBreakdown: statusCounts,
+        orders: {
+          total: totalOrders,
+          completed: completedOrders,
+          failed: failedOrders,
+          successRate: `${orderSuccessRate}%`
+        },
+        popularity: {
+          tokens: topTokens,
+          chains: topChains,
+          pairs: topPairs
+        },
+        timeSeries: dailyData
+      }
+    });
+  } catch (e) {
+    console.error('[Analytics] Error:', e);
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+/**
  * GET /settlements/:id
  * Get settlement details by ID
  */
@@ -378,6 +551,31 @@ router.get('/settlements/:id', async (req, res) => {
       return res.status(404).json({ success: false, error: 'Not found' });
     }
     res.json({ success: true, data: settlement });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+/**
+ * PATCH /settlements/:id
+ * Update settlement metadata (name, tags, groupId)
+ */
+router.patch('/settlements/:id', async (req, res) => {
+  try {
+    const settlement = await getSettlementById(req.params.id);
+    if (!settlement) {
+      return res.status(404).json({ success: false, error: 'Not found' });
+    }
+    
+    const { name, tags, groupId } = req.body;
+    const updates = {};
+    
+    if (name !== undefined) updates.name = String(name).slice(0, 100);
+    if (tags !== undefined) updates.tags = (Array.isArray(tags) ? tags : []).slice(0, 10).map(t => String(t).slice(0, 50));
+    if (groupId !== undefined) updates.groupId = String(groupId).slice(0, 50);
+    
+    const updated = await updateSettlement(req.params.id, updates);
+    res.json({ success: true, data: updated });
   } catch (e) {
     res.status(500).json({ success: false, error: e.message });
   }
@@ -505,70 +703,174 @@ router.post('/settlements/:id/compute', async (req, res) => {
  * POST /settlements/:id/execute
  * Execute: create real fixed quotes & shifts (one per recipient)
  * STRICT COMPLIANCE: Gate on /v2/permissions - block restricted jurisdictions
+ * 
+ * Wave 3 improvements:
+ * - Pre-flight validation of ALL addresses before creating ANY orders
+ * - Idempotent: rejects if already executing/completed
+ * - Structured error responses with clear codes
  */
 router.post('/settlements/:id/execute', async (req, res) => {
   try {
     const s = await getSettlementById(req.params.id);
-    if (!s) return res.status(404).json({ success: false, error: 'Not found' });
-    
-    if (!CONFIG.sideshift.secret || !CONFIG.sideshift.affiliateId) {
-      return res.status(400).json({ success: false, error: 'SideShift credentials missing' });
+    if (!s) {
+      return res.status(404).json({ 
+        success: false, 
+        code: 'NOT_FOUND',
+        message: 'Settlement not found' 
+      });
     }
     
+    // IDEMPOTENCY CHECK: Prevent double execution
+    if (s.status === 'executing') {
+      return res.status(409).json({ 
+        success: false, 
+        code: 'ALREADY_EXECUTING',
+        message: 'Settlement is already being executed. Check the status page for updates.',
+        settlementId: s.settlementId,
+        currentStatus: s.status
+      });
+    }
+    
+    if (s.status === 'completed') {
+      return res.status(409).json({ 
+        success: false, 
+        code: 'ALREADY_COMPLETED',
+        message: 'Settlement has already been completed successfully.',
+        settlementId: s.settlementId,
+        currentStatus: s.status
+      });
+    }
+    
+    if (s.status !== 'ready') {
+      return res.status(400).json({ 
+        success: false, 
+        code: 'INVALID_STATUS',
+        message: `Settlement must be in 'ready' status to execute. Current status: ${s.status}`,
+        settlementId: s.settlementId,
+        currentStatus: s.status
+      });
+    }
+    
+    if (!CONFIG.sideshift.secret || !CONFIG.sideshift.affiliateId) {
+      return res.status(400).json({ 
+        success: false, 
+        code: 'MISSING_CREDENTIALS',
+        message: 'SideShift credentials not configured on the server' 
+      });
+    }
+    
+    const netPayments = s.nettingResult?.netPayments || [];
+    
+    if (netPayments.length === 0) {
+      return res.status(400).json({ 
+        success: false, 
+        code: 'NO_PAYMENTS',
+        message: 'No net payments to execute. Please compute netting first.' 
+      });
+    }
+    
+    // =========================================================
+    // PRE-FLIGHT VALIDATION: Check ALL addresses BEFORE creating any orders
+    // This prevents partial execution and gives clear upfront errors
+    // =========================================================
+    const validationErrors = [];
+    
+    for (const item of netPayments) {
+      const recipient = item.recipient;
+      const receiveAddress = item.receiveAddress;
+      const receiveToken = item.receiveToken;
+      const receiveChain = item.receiveChain;
+      const receiveMemo = item.receiveMemo || '';
+      
+      // Check required fields exist
+      if (!recipient) {
+        validationErrors.push({
+          recipient: 'Unknown',
+          field: 'recipient',
+          reason: 'Missing recipient name'
+        });
+        continue;
+      }
+      
+      if (!receiveToken || !receiveChain) {
+        validationErrors.push({
+          recipient,
+          field: 'receiveToken/receiveChain',
+          reason: `Missing receive token or chain for ${recipient}`
+        });
+        continue;
+      }
+      
+      // Check address exists and is not empty
+      if (!receiveAddress || receiveAddress.trim() === '') {
+        validationErrors.push({
+          recipient,
+          field: 'receiveAddress',
+          reason: `Missing receive address for ${recipient}. Please add a ${receiveChain} wallet address.`
+        });
+        continue;
+      }
+      
+      // Validate address format for the target chain
+      const addressValidation = validateSettleDetails(
+        receiveToken,
+        receiveChain,
+        receiveAddress,
+        receiveMemo
+      );
+      
+      if (!addressValidation.ok) {
+        validationErrors.push({
+          recipient,
+          field: addressValidation.requiresMemo ? 'memo' : 'receiveAddress',
+          reason: addressValidation.reason,
+          address: receiveAddress,
+          chain: receiveChain
+        });
+      }
+    }
+    
+    // If ANY validation errors, return them ALL at once (don't start execution)
+    if (validationErrors.length > 0) {
+      console.error('[Execute] Pre-flight validation failed:', validationErrors);
+      return res.status(400).json({
+        success: false,
+        code: 'MISSING_OR_INVALID_ADDRESS',
+        message: `Cannot execute settlement: ${validationErrors.length} recipient(s) have invalid or missing addresses. Please fix them before executing.`,
+        details: validationErrors
+      });
+    }
+    
+    // =========================================================
+    // PERMISSIONS CHECK
+    // =========================================================
     const userIp = extractUserIp(req);
     
-    // CRITICAL: Gate on permissions for compliance - MUST check before any shifts
     try {
       await checkPermissions(userIp);
     } catch (e) {
       const status = e?.response?.status;
       if (status === 403) {
         return res.status(403).json({ 
-          success: false, 
-          error: 'Settlements not available in your region. SideShift.ai does not operate in restricted jurisdictions.' 
+          success: false,
+          code: 'REGION_BLOCKED', 
+          message: 'Settlements not available in your region. SideShift.ai does not operate in restricted jurisdictions.' 
         });
       }
       // Other errors (network, etc.) - log but continue with caution
-      console.warn('Permissions check failed (non-403):', e.message);
+      console.warn('[Execute] Permissions check failed (non-403):', e.message);
     }
 
+    // =========================================================
+    // CREATE SIDESHIFT ORDERS
+    // All addresses validated - proceed with order creation
+    // =========================================================
     const orders = [];
-    for (const item of (s.nettingResult?.netPayments || [])) {
+    for (const item of netPayments) {
       try {
-        // VALIDATION: Check settle address before creating order
+        // Addresses already validated in pre-flight check
         const settleAddress = item.receiveAddress;
         const settleMemo = item.receiveMemo || '';
-        
-        // Check if address exists
-        if (!settleAddress) {
-          console.error(`[Execute] Missing receiveAddress for ${item.recipient}`);
-          console.error(`[Execute] Item data:`, JSON.stringify(item, null, 2));
-          orders.push({
-            recipient: item.recipient,
-            status: 'failed',
-            error: `Missing receive address for ${item.recipient}`,
-            failureReason: 'No receive address provided'
-          });
-          continue;
-        }
-        
-        const addressValidation = validateSettleDetails(
-          item.receiveToken,
-          item.receiveChain,
-          settleAddress,
-          settleMemo
-        );
-        
-        if (!addressValidation.ok) {
-          console.error(`Address validation failed for ${item.recipient}:`, addressValidation.reason);
-          orders.push({
-            recipient: item.recipient,
-            status: 'failed',
-            error: addressValidation.reason,
-            failureReason: `Invalid address: ${addressValidation.reason}`
-          });
-          continue;
-        }
         
         // Validate pair for intended deposit (USDC on Base → recipient preference)
         const pair = await validatePair({
@@ -685,8 +987,9 @@ router.post('/settlements/:id/execute', async (req, res) => {
     if (successfulOrders.length === 0) {
       const errorMessages = failedOrders.map(f => `${f.recipient}: ${f.error}`).join('; ');
       return res.status(400).json({ 
-        success: false, 
-        error: `All orders failed: ${errorMessages}`,
+        success: false,
+        code: 'ALL_ORDERS_FAILED',
+        message: `All orders failed to create: ${errorMessages}`,
         failures: failedOrders
       });
     }
@@ -701,12 +1004,20 @@ router.post('/settlements/:id/execute', async (req, res) => {
       success: true, 
       data: { 
         orders: updated.sideshiftOrders,
-        failures: failedOrders.length > 0 ? failedOrders : undefined
+        failures: failedOrders.length > 0 ? failedOrders : undefined,
+        settlementId: s.settlementId,
+        successCount: successfulOrders.length,
+        failureCount: failedOrders.length
       } 
     });
   } catch (e) {
-    const s = e?.response?.status || 500;
-    res.status(s).json({ success: false, error: e?.response?.data?.message || e.message });
+    console.error('[Execute] Unexpected error:', e);
+    const status = e?.response?.status || 500;
+    res.status(status).json({ 
+      success: false, 
+      code: 'EXECUTION_ERROR',
+      message: e?.response?.data?.message || e.message 
+    });
   }
 });
 

@@ -9,6 +9,7 @@ export default defineConfig(({ mode }) => ({
     host: "::",
     port: 8080,
   },
+  cacheDir: ".vite_cache", // Use custom cache directory to avoid Windows lock issues
   plugins: [react(), mode === "development" && componentTagger()].filter(
     Boolean
   ),

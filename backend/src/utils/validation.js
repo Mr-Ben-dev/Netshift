@@ -32,10 +32,16 @@ export const recipientPreferenceSchema = Joi.object({
 
 /**
  * Schema for settlement creation request
+ * Note: min(1) allows single-obligation settlements (simple 1:1 swaps)
+ * The netting algorithm will handle any number of obligations
  */
 export const settlementCreateSchema = Joi.object({
-  obligations: Joi.array().min(2).items(obligationSchema).required(),
-  recipientPreferences: Joi.array().items(recipientPreferenceSchema).default([])
+  obligations: Joi.array().min(1).items(obligationSchema).required(),
+  recipientPreferences: Joi.array().items(recipientPreferenceSchema).default([]),
+  // Optional metadata for organization
+  name: Joi.string().max(100).allow('', null),
+  tags: Joi.array().items(Joi.string().max(50)).max(10).default([]),
+  groupId: Joi.string().max(50).allow('', null)
 });
 
 /**
