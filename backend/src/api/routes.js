@@ -950,7 +950,7 @@ router.post('/settlements/:id/execute', async (req, res) => {
           receiveToken: item.receiveToken,
           receiveChain: item.receiveChain,
           payAmount: item.payAmount,
-          settleAddress
+          settleAddress: item.receiveAddress // Use item.receiveAddress since settleAddress is in try scope
         };
         console.error(`[Execute] Failed to create shift:`, JSON.stringify(errorDetails, null, 2));
         
