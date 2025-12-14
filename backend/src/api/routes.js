@@ -12,7 +12,7 @@ import QRCode from 'qrcode';
 import { CONFIG } from '../config/constants.js';
 import { Settlement } from '../database/models.js';
 import { createSettlement, getSettlementById, updateSettlement } from '../database/queries.js';
-import { computeNetting, mockPriceUSD } from '../netting/algorithm.js';
+import { computeNetting, convertToUSD } from '../netting/algorithm.js';
 import { recommendDepositToken } from '../netting/optimizer.js';
 import { validateSettleDetails } from '../utils/addressValidation.js';
 import { extractUserIp, settlementCreateSchema } from '../utils/validation.js';
@@ -594,8 +594,8 @@ router.post('/settlements/:id/compute', async (req, res) => {
     console.log('[Compute] Obligations:', JSON.stringify(s.obligations, null, 2));
     console.log('[Compute] Recipient preferences:', JSON.stringify(s.recipientPreferences, null, 2));
     
-    // Compute netting in native tokens (no price conversion needed)
-    const net = await computeNetting(s.obligations, mockPriceUSD);
+    // Compute netting using real prices from CoinGecko (USDC = $1)
+    const net = await computeNetting(s.obligations, convertToUSD);
     
     console.log(`[Compute] Netting result: ${net.netPaymentsUSD.length} net payments`);
     

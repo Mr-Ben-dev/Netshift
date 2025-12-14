@@ -135,11 +135,33 @@ export default function Proof() {
                 {(settlement as any).name}
               </p>
             )}
-            <p className="text-xl text-muted-foreground">
+            <p className="text-xl text-muted-foreground mb-6">
               {isComplete
                 ? "All recipients have been paid. Details below."
                 : `${completedOrders.length} of ${orders.length} payments completed.`}
             </p>
+
+            {/* Action Button for In-Progress */}
+            {!isComplete && orders.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+              >
+                <Link to={`/settlement/${settlementId}`}>
+                  <Button
+                    size="lg"
+                    className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-black font-bold shadow-lg shadow-yellow-500/30"
+                  >
+                    <ArrowRight className="w-5 h-5 mr-2" />
+                    View Orders & Make Deposits
+                  </Button>
+                </Link>
+                <p className="text-sm text-muted-foreground mt-3">
+                  Send USDC to the deposit addresses to complete your settlement
+                </p>
+              </motion.div>
+            )}
           </motion.div>
 
           {/* Summary Cards */}

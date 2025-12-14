@@ -1,5 +1,5 @@
-import { Link } from 'react-router-dom'
-import { Github, Twitter } from 'lucide-react'
+import { Github, Twitter } from "lucide-react";
+import { Link } from "react-router-dom";
 
 export function Footer() {
   return (
@@ -8,7 +8,9 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* Logo & Tagline */}
           <div>
-            <h3 className="text-xl font-bold gradient-text-cyan-blue mb-2">NetShift</h3>
+            <h3 className="text-xl font-bold gradient-text-cyan-blue mb-2">
+              NetShift
+            </h3>
             <p className="text-sm text-muted-foreground">
               Multi-party payment netting. Fewer transactions, lower fees.
             </p>
@@ -18,10 +20,42 @@ export function Footer() {
           <div>
             <h4 className="font-semibold mb-4">Product</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><Link to="/how-it-works" className="hover:text-foreground transition-colors">How It Works</Link></li>
-              <li><Link to="/dashboard" className="hover:text-foreground transition-colors">Dashboard</Link></li>
-              <li><a href="https://docs.netshift.app" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">Documentation</a></li>
-              <li><a href="https://github.com/netshift" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">API</a></li>
+              <li>
+                <Link
+                  to="/how-it-works"
+                  className="hover:text-foreground transition-colors"
+                >
+                  How It Works
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/dashboard"
+                  className="hover:text-foreground transition-colors"
+                >
+                  Dashboard
+                </Link>
+              </li>
+              <li>
+                <a
+                  href="https://docs.netshift.app"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-foreground transition-colors"
+                >
+                  Documentation
+                </a>
+              </li>
+              <li>
+                <a
+                  href="https://github.com/netshift"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-foreground transition-colors"
+                >
+                  API
+                </a>
+              </li>
             </ul>
           </div>
 
@@ -65,15 +99,25 @@ export function Footer() {
             </a>
           </div>
           <div className="flex gap-6">
-            <a href="/terms" className="hover:text-foreground transition-colors">Terms</a>
-            <a href="/privacy" className="hover:text-foreground transition-colors">Privacy</a>
+            <a
+              href="/terms"
+              className="hover:text-foreground transition-colors"
+            >
+              Terms
+            </a>
+            <a
+              href="/privacy"
+              className="hover:text-foreground transition-colors"
+            >
+              Privacy
+            </a>
           </div>
           <div className="text-xs">
-            <span className="px-2 py-1 rounded glass-card">POL (Polygon)</span>
-            <span className="ml-2">Simulation Mode in restricted regions</span>
+            <span className="px-2 py-1 rounded glass-card">USDC on Base</span>
+            <span className="ml-2">Low fees, fast settlements</span>
           </div>
         </div>
       </div>
     </footer>
-  )
+  );
 }

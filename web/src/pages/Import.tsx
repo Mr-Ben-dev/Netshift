@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
+
 import { toast } from "@/hooks/use-toast";
 import {
   useBackendHealth,
@@ -34,7 +34,6 @@ import {
   FileText,
   Info,
   Plus,
-  Settings2,
   Sparkles,
   Trash2,
   TrendingUp,
@@ -42,7 +41,6 @@ import {
   Users,
   Wallet,
   XCircle,
-  Zap,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -75,7 +73,6 @@ export default function Import() {
   const [activeStep, setActiveStep] = useState<
     "upload" | "obligations" | "recipients"
   >("upload");
-  const [advancedMode, setAdvancedMode] = useState(false);
   const [livePrices, setLivePrices] = useState<Record<string, number> | null>(
     null
   );
@@ -252,10 +249,10 @@ export default function Import() {
   };
 
   const downloadSample = () => {
-    const csv = `from,to,amount,token,chain,receiveAddress,refundAddress
-Alice,Bob,100,usdc,base,0x1234...,0x1234...
-Bob,Charlie,50,eth,ethereum,0x5678...,0x5678...
-Charlie,Alice,75,btc,bitcoin,bc1q...,bc1q...`;
+    const csv = `from,to,amount,token,chain
+Alice,Bob,100,usdc,base
+Bob,Charlie,50,usdc,base
+Charlie,Alice,75,usdc,base`;
 
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
@@ -292,13 +289,6 @@ Charlie,Alice,75,btc,bitcoin,bc1q...,bc1q...`;
           ? { ...o, [field]: field === "amount" ? Number(value) : value }
           : o
       )
-    );
-  };
-
-  const updateObligationAsset = (id: string, assetId: string) => {
-    const [token, chain] = assetId.split("-");
-    setObligations(
-      obligations.map((o) => (o.id === id ? { ...o, token, chain } : o))
     );
   };
 
@@ -525,52 +515,9 @@ Charlie,Alice,75,btc,bitcoin,bc1q...,bc1q...`;
               Create Settlement
             </h1>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-6">
-              {advancedMode
-                ? "Full control over obligations, tokens, and chains. Perfect for complex multi-party settlements."
-                : "Quick and easy: upload a CSV or enter obligations manually. We'll handle the rest."}
+              Upload a CSV or enter obligations manually. All deposits are in
+              USDC on Base, recipients choose what token they want to receive.
             </p>
-
-            {/* Simple/Advanced Mode Toggle */}
-            <div className="flex items-center justify-center gap-4">
-              <div className="flex items-center gap-3 px-4 py-2 rounded-full bg-muted/30 border border-border/50">
-                <div
-                  className={`flex items-center gap-2 ${
-                    !advancedMode ? "text-foreground" : "text-muted-foreground"
-                  }`}
-                >
-                  <Zap className="w-4 h-4" />
-                  <span className="text-sm font-medium">Simple</span>
-                </div>
-                <Switch
-                  checked={advancedMode}
-                  onCheckedChange={setAdvancedMode}
-                  className="data-[state=checked]:bg-brand-purple"
-                />
-                <div
-                  className={`flex items-center gap-2 ${
-                    advancedMode ? "text-foreground" : "text-muted-foreground"
-                  }`}
-                >
-                  <Settings2 className="w-4 h-4" />
-                  <span className="text-sm font-medium">Advanced</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Mode Explanation */}
-            <AnimatePresence mode="wait">
-              <motion.p
-                key={advancedMode ? "advanced" : "simple"}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className="text-sm text-muted-foreground mt-4 max-w-xl mx-auto"
-              >
-                {advancedMode
-                  ? "Show all fields: custom tokens/chains per obligation, refund addresses, memos, and detailed validation."
-                  : "Simplified view: just From, To, and Amount. Default to USDC on Base for easy onboarding."}
-              </motion.p>
-            </AnimatePresence>
           </motion.div>
 
           {/* Progress Steps */}
@@ -765,12 +712,12 @@ Charlie,Alice,75,btc,bitcoin,bc1q...,bc1q...`;
                           token, chain
                         </p>
                         <p>
-                          <strong>Optional columns:</strong> receiveAddress,
-                          refundAddress
+                          <strong>Note:</strong> All obligations use USDC on
+                          Base for deposits. Recipients choose their receive
+                          token in the next step.
                         </p>
                         <p>
-                          <strong>Example:</strong>{" "}
-                          Alice,Bob,100,usdc,base,0x1234...,0x1234...
+                          <strong>Example:</strong> Alice,Bob,100,usdc,base
                         </p>
                       </div>
                     </div>
@@ -813,11 +760,7 @@ Charlie,Alice,75,btc,bitcoin,bc1q...,bc1q...`;
                           className="glass-card p-6 rounded-xl hover:bg-white/5 transition-all duration-200 group relative z-10"
                           style={{ zIndex: obligations.length - index }}
                         >
-                          <div
-                            className={`grid grid-cols-1 gap-4 items-end ${
-                              advancedMode ? "md:grid-cols-5" : "md:grid-cols-4"
-                            }`}
-                          >
+                          <div className="grid grid-cols-1 gap-4 items-end md:grid-cols-4">
                             <div>
                               <Label className="text-sm font-medium mb-2 block">
                                 From
@@ -856,7 +799,7 @@ Charlie,Alice,75,btc,bitcoin,bc1q...,bc1q...`;
 
                             <div>
                               <Label className="text-sm font-medium mb-2 block">
-                                Amount
+                                Amount (USDC)
                               </Label>
                               <Input
                                 type="number"
@@ -873,66 +816,34 @@ Charlie,Alice,75,btc,bitcoin,bc1q...,bc1q...`;
                               />
                             </div>
 
-                            {/* Advanced Mode: Custom Asset Selection */}
-                            {advancedMode ? (
-                              <div>
-                                <Label className="text-sm font-medium mb-2 block">
-                                  Token/Chain
-                                </Label>
-                                <AssetSelect
-                                  coins={coins || []}
-                                  value={`${obligation.token}-${obligation.chain}`}
-                                  onChange={(assetId) =>
-                                    updateObligationAsset(
-                                      obligation.id,
-                                      assetId
-                                    )
-                                  }
-                                  disabled={coinsLoading}
-                                />
-                              </div>
-                            ) : (
-                              <div>
-                                <Label className="text-sm font-medium mb-2 block">
-                                  Asset
-                                </Label>
-                                <div className="flex items-center gap-3 px-4 py-3 rounded-xl border border-white/10 bg-background-tertiary/30">
-                                  <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center">
-                                    <span className="text-blue-400 font-bold text-sm">
-                                      $
+                            <div>
+                              <Label className="text-sm font-medium mb-2 block">
+                                Deposit Token
+                              </Label>
+                              <div className="flex items-center gap-3 px-4 py-3 rounded-xl border border-white/10 bg-background-tertiary/30">
+                                <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center">
+                                  <span className="text-blue-400 font-bold text-sm">
+                                    $
+                                  </span>
+                                </div>
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-semibold text-foreground">
+                                      USDC
                                     </span>
+                                    <Badge
+                                      variant="outline"
+                                      className="text-xs"
+                                    >
+                                      Base
+                                    </Badge>
                                   </div>
-                                  <div className="flex-1">
-                                    <div className="flex items-center gap-2">
-                                      <span className="font-semibold text-foreground">
-                                        USDC
-                                      </span>
-                                      <Badge
-                                        variant="outline"
-                                        className="text-xs"
-                                      >
-                                        base
-                                      </Badge>
-                                    </div>
-                                    <span className="text-xs text-muted-foreground">
-                                      USD Coin on Base
-                                    </span>
-                                  </div>
+                                  <span className="text-xs text-muted-foreground">
+                                    Low fees, fast settlement
+                                  </span>
                                 </div>
                               </div>
-                            )}
-
-                            {/* Simple mode: show hint about advanced */}
-                            {!advancedMode && (
-                              <div className="md:col-span-4">
-                                <p className="text-xs text-muted-foreground">
-                                  <Info className="w-3 h-3 inline mr-1" />
-                                  Using USDC on Base by default. Switch to{" "}
-                                  <strong>Advanced mode</strong> to select
-                                  different tokens/chains.
-                                </p>
-                              </div>
-                            )}
+                            </div>
                           </div>
 
                           <Button
@@ -1002,18 +913,19 @@ Charlie,Alice,75,btc,bitcoin,bc1q...,bc1q...`;
                   <Alert className="mb-6 border-blue-500/50 bg-blue-500/10">
                     <Info className="h-4 w-4 text-blue-400" />
                     <AlertTitle className="text-blue-300">
-                      Choose Output Tokens
+                      Choose Output Tokens &amp; Addresses
                     </AlertTitle>
                     <AlertDescription className="text-blue-200/80">
-                      All obligations are in <strong>USDC</strong>. Choose which
-                      token each recipient wants to <strong>receive</strong>{" "}
-                      (ETH, SOL, etc.). The system will show conversion rates
-                      from SideShift.
+                      Payers deposit <strong>USDC on Base</strong>. Each
+                      recipient can choose what token they want to{" "}
+                      <strong>receive</strong> (ETH, SOL, BTC, etc.). SideShift
+                      handles the conversion automatically.
                       <br />
                       <strong className="text-blue-300 mt-2 block">
                         Example:
                       </strong>{" "}
-                      Bob receives ETH, Charlie receives SOL
+                      Bob receives ETH on Ethereum, Charlie receives SOL on
+                      Solana
                     </AlertDescription>
                   </Alert>
 

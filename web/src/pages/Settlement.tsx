@@ -681,6 +681,86 @@ export default function Settlement() {
                   </div>
                 </CardContent>
               </Card>
+
+              {/* Quick Actions from Overview */}
+              {settlement.status === "ready" && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mt-8 p-6 rounded-xl border-2 border-dashed border-primary/50 bg-primary/5 text-center"
+                >
+                  <h3 className="text-xl font-bold mb-2">Ready to Execute!</h3>
+                  <p className="text-muted-foreground mb-4">
+                    Review the netting optimization, then execute to create
+                    SideShift orders.
+                  </p>
+                  <div className="flex flex-wrap justify-center gap-3">
+                    <Button
+                      size="lg"
+                      variant="outline"
+                      onClick={() => setActiveTab("netting")}
+                      className="border-primary/50"
+                    >
+                      <TrendingUp className="w-5 h-5 mr-2" />
+                      View Netting
+                    </Button>
+                    <Button
+                      size="lg"
+                      className="gradient-bg-primary btn-glow"
+                      onClick={handleExecute}
+                      disabled={
+                        executeSettlement.isPending ||
+                        !preFlightValidation.isValid
+                      }
+                    >
+                      {executeSettlement.isPending ? (
+                        <>
+                          <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                          Creating Orders...
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle2 className="w-5 h-5 mr-2" />
+                          Execute Settlement
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </motion.div>
+              )}
+
+              {settlement.status === "executing" && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mt-8 p-6 rounded-xl border-2 border-yellow-500/50 bg-yellow-500/10 text-center"
+                >
+                  <Loader2 className="w-10 h-10 mx-auto mb-3 animate-spin text-yellow-400" />
+                  <h3 className="text-xl font-bold mb-2 text-yellow-300">
+                    Settlement Executing
+                  </h3>
+                  <p className="text-yellow-200/70 mb-4">
+                    Orders created! Send deposits to complete the settlement.
+                  </p>
+                  <div className="flex flex-wrap justify-center gap-3">
+                    <Button
+                      size="lg"
+                      onClick={() => setActiveTab("orders")}
+                      className="bg-yellow-500 hover:bg-yellow-600 text-black font-bold"
+                    >
+                      View Orders & Deposit
+                    </Button>
+                    <Button
+                      size="lg"
+                      variant="outline"
+                      onClick={() => navigate(`/proof/${settlementId}`)}
+                      className="border-yellow-500/50 text-yellow-300"
+                    >
+                      Track Progress
+                    </Button>
+                  </div>
+                </motion.div>
+              )}
             </TabsContent>
             <TabsContent value="netting">
               {/* Graph Visualization */}
@@ -888,17 +968,58 @@ export default function Settlement() {
                         <h3 className="text-xl font-semibold mb-2">
                           No Orders Yet
                         </h3>
-                        <p className="text-muted-foreground">
+                        <p className="text-muted-foreground mb-6">
                           Execute the settlement to create SideShift orders
                         </p>
+                        {settlement.status === "ready" && (
+                          <Button
+                            size="lg"
+                            className="gradient-bg-primary btn-glow"
+                            onClick={handleExecute}
+                            disabled={
+                              executeSettlement.isPending ||
+                              !preFlightValidation.isValid
+                            }
+                          >
+                            {executeSettlement.isPending ? (
+                              <>
+                                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                                Creating Orders...
+                              </>
+                            ) : (
+                              <>
+                                <CheckCircle2 className="w-5 h-5 mr-2" />
+                                Execute Settlement Now
+                              </>
+                            )}
+                          </Button>
+                        )}
                       </div>
                     </CardContent>
                   </Card>
                 ) : (
                   <div className="space-y-4">
+                    <Alert className="border-yellow-500/50 bg-yellow-500/10 mb-4">
+                      <Info className="h-4 w-4 text-yellow-400" />
+                      <AlertDescription className="text-yellow-200">
+                        <strong>
+                          Send deposits to complete your settlement.
+                        </strong>{" "}
+                        Each order has a unique deposit address. Send the exact
+                        amount shown to receive the converted tokens.
+                      </AlertDescription>
+                    </Alert>
                     {orders.map((o) => (
                       <OrderCard key={o.orderId} order={o} onCancel={refetch} />
                     ))}
+                    <div className="text-center mt-6">
+                      <Link to={`/proof/${settlementId}`}>
+                        <Button variant="outline" size="lg">
+                          <TrendingUp className="w-5 h-5 mr-2" />
+                          Track Progress on Proof Page
+                        </Button>
+                      </Link>
+                    </div>
                   </div>
                 )}
               </PermissionsGate>
