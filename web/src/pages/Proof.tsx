@@ -60,11 +60,15 @@ export default function Proof() {
   const completedOrders = orders.filter(
     (o: any) => o.status === "settled" || o.status === "completed"
   );
+  // Use depositAmount (USDC value) not settleAmount (received token amount)
   const totalSettled = completedOrders.reduce(
-    (sum: number, o: any) => sum + parseFloat(o.settleAmount || 0),
+    (sum: number, o: any) => sum + parseFloat(o.depositAmount || 0),
     0
   );
-  const isComplete = settlement.status === "completed";
+  // Check if all orders are settled OR if settlement status is completed
+  const allOrdersSettled =
+    orders.length > 0 && completedOrders.length === orders.length;
+  const isComplete = settlement.status === "completed" || allOrdersSettled;
 
   // Calculate total obligations for reduction percentage
   const totalObligations = settlement.obligations?.length || 0;
